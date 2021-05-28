@@ -1,0 +1,2086 @@
+<html>
+<!-- 
+	TODO: !pagination showing after delete
+	TODO: top 10
+	TODO: realtime seeders/leechers
+	TODO: title is member of class
+	TODO: two back buttons needed when title clicked
+	TODO: extra comma on title page for tags (?)
+	TODO: torrent file download link (on main page??)
+	TODO: find way to regulate deletions (of titles)
+	TODO: show media type on browse page (etc)
+	TODO: torrent info dropdown
+	TODO: show partials after server query so data doesn't ghost in
+	TODO: sort by titles (with routes?)
+	TODO: top 10 sometimes doesn't load (?)
+	TODO: more on top 10, classes frontend	TODO: 
+	TODO: seed images clientside rather than external linking them...this also req editing doc edit page
+	TODO: size, snatches in title row
+	TODO: seeders/leechers
+	TODO: press enter to search
+	TODO: disable autocomplete
+	TOOD: one day update pagination so it has a constant # of pages
+	TODO: taglist route should reduce pages
+	TODO: identical titles
+	TODO: publisher dupe
+	TODO: make pagination work for forums
+!-->
+	<head>
+		<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.13.1/underscore-min.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/webtorrent@latest/webtorrent.min.js"></script>		
+		<script src="http://momentjs.com/downloads/moment.min.js"></script>
+	</head>
+	<body>
+
+		<div id="wrapper">
+		<h1><a href="/index">SolomonsHouse</a></h1><ul class="heading">			
+			<li><a href="/upload" class="upload_route">Upload</a></li>
+			<li><a href="/titles" class="torrents_route">Titles</a></li>			
+			<li><a href="/top10" class="top10_route">Top 10</a></li>
+			<li><a href="/classes" class="classes_route">Classes</a></li>
+			<li><a href="/forums" class="forums_route">Forums</a></li>
+		</ul>
+		<ul class="search_bar">
+			<li>
+				<form class="adv_search" id="search_titles">
+					<input placeholder="titles" id="titles" autocomplete="off" name="text">
+				</form>
+				<div id="realtime_titles" class="realtime_search">
+					
+				</div>
+			</li>
+			<li>
+				<form class="adv_search" id="search_persons">
+					<input placeholder = "persons" id="persons" autocomplete="off" name="text">
+				</form>
+				<div id="realtime_persons" class="realtime_search">
+					
+				</div>
+			</li>
+			<li>
+				<form class="adv_search" id="search_classes">
+					<input placeholder = "classes" id="classes" autocomplete="off" name="text">
+				</form>
+				<div id="realtime_classes" class="realtime_search">
+					
+				</div>
+			</li>
+			<li>
+				<form class="adv_search" id="search_forums">
+					<input placeholder = "forums" id="forums" autocomplete="off" name="text">
+				</form>
+				<div id="realtime_forums" class="realtime_search">
+					
+				</div>
+			</li>
+		</ul>
+		<div id="hero">
+	      <div id="output">
+	        <div id="progressBar"></div>
+	        <!-- The video player will be added here -->
+	      </div>
+	      <!-- Statistics -->
+	      <div id="status">
+	        <div>
+	          <span class="show-leech">Downloading </span>
+	          <span class="show-seed">Seeding </span>
+	      
+	          <span class="show-leech"> from </span>
+	          <span class="show-seed"> to </span>
+	          <code id="numPeers">0 peers</code>.
+	        </div>
+	        <div>
+	          <code id="downloaded"></code>
+	          of <code id="total"></code>
+	          — <span id="remaining"></span><br/>
+	          &#x2198;<code id="downloadSpeed">0 b/s</code>
+	          / &#x2197;<code id="uploadSpeed">0 b/s</code>
+	        </div>
+	      </div>
+    </div>
+		<br><br>
+			<div class="log">
+		</div>
+		<div class="partial index_partial">
+			<br>			
+			<span>Nonfiction & fiction ebooks and audiobooks. Classical Music. Documentaries. All in the public domain.</span>
+			<br><br>
+			<span>Masterful, modest, feast thou with the gods.</span>
+		</div>
+
+		<div class="partial top10_partial">
+			<h2><a href>Top 10 Torrents this Day</a></h2>
+			<div class="collage" id="collage_day">
+				
+			</div>
+
+			<h2><a href>Top 10 Torrents this Week</a></h2>
+			<div class="collage" id="collage_week">
+				
+			</div>
+
+			<h2><a href>Top 10 Torrents this Month</a></h2>
+			<div class="collage" id="collage_month">
+				
+			</div>
+
+			<h2><a href>Top 10 Torrents this Year</a></h2>
+			<div class="collage" id="collage_year">
+				
+			</div>
+
+			<h2><a href>Top 10 Torrents of All Time</a></h2>
+		    <div class="collage" id="collage_time">
+				
+			</div>
+		</div>
+
+		<div class="partial forums_partial">
+			<h2>Forums</h2>
+			
+		</div>
+
+		<div class="partial forums_post_partial">
+			<h2>Post</h2>
+			<form class="forums_post" action="/forum_post" method="POST">
+				<input placeholder="tripcode (name#password)" name="tripcode"><br>
+				<input id="threadTitle" placeholder="thread title" name="threadTitle">
+				<br>
+				<textarea class="forum_textarea" name='postBody' placeholder="post here"></textarea><br><br>
+				<button>Submit</button>
+			</form>
+		</div>
+		
+		<div class="partial gazelle_partial">
+			<button class="edit">Edit doc</button>
+			<br>
+			<h2>Document</h2><br>
+			<a class="subhead"><h3></h3></a>
+			<br>
+			<img class="gaz_img"><br><br>
+			<p class="description"></p>
+			<br>
+			<table class="main_table">
+				<thead>
+					<tr>
+						<th class="gaz_style"></th><th>Name / Year / Persons</th><th>Time</th><th>Size</th><th>Snatches</th>
+					</tr>
+				</thead>
+				<tbody>
+				</tbody>
+			</table><br>
+			<div class="collage">
+
+			</div>
+			
+		</div>
+
+		<div class="partial edit_doc_partial">
+			<h2>Edit doc</h2>
+			<form method="POST" class="edit_doc">
+				<input placeholder = "title" name="doc_name"><br>
+				<input name="doc_person" id="doc_person" placeholder="person"><button id="doc_add_person">add person</button><button id="doc_create_person">create person</button><br>
+				<input placeholder="date" name="doc_date"><br>
+				<input placeholder="img url" name="doc_img"><br>
+				<input placeholder="tags (comma separated)" name="doc_tags"><br>
+				<br><textarea placeholder = "description" name="doc_description"></textarea><br>
+				<br><input class="add_titles" placeholder="title id (submit to add to class)" name="doc_title_id">	
+				<br><br><br>
+				*<input class="add_nonpersons" placeholder="person name to delete" name="nonpersons"><br>
+				*<input class="add_nontags" placeholder="tag name to delete" name="nontags"><br>
+				*<input class="add_nontorrents" placeholder="torrent to delete (infoHash)" name="nontorrents"><br>	
+						
+				<br><br>
+				*indicates field must be submitted by itself
+
+				<input type="submit" value="Submit">
+			</form>
+
+		</div>
+
+		<div class="partial classes_partial">
+			<br>
+		<h2>Classes</h2>
+			<a class="add_class" href="#">Add class</a>
+			<table class="main_table">
+				<thead>
+					<tr>
+						<th>Name</th><th>Tags</th>
+					</tr>
+				</thead>
+				<tbody>
+				</tbody>
+			</table><br>
+			<div class="pagination">
+
+			</div>
+			<br>
+		</div>
+
+		<div class="partial add_class_partial">
+			<br>
+			<h2>Add Class</h2>
+			<form class="create_class" action="/create_class" method="POST">
+				<input name="name" placeholder="Title"><br>
+				<input name="tags" placeholder="tags (comma separated)"><br>
+				<input type="submit" value="Submit"> 
+			</form>
+		</div>
+	
+		<!--this is the main browse partial. i just call them 'partials'. they are divs that are dy-
+		namically loaded with jquery. when a partial is called all .partial are hidden. a router is behind this !-->
+		<div class="partial titles_partial">
+			<br>
+		<h2><a href>Titles</a></h2>
+			<table class="main_table">
+				<thead>
+					<tr>
+						<th class="gaz_style"></th><th>Name / Year / Persons</th><th>Time</th><th>Size</th><th>Snatches</th>
+					</tr>
+				</thead>
+				<tbody>
+				</tbody>
+			</table><br>
+			<div class="pagination">
+
+			</div>
+			<br>
+		</div>
+
+
+		<div class="partial upload_partial"><br>
+		<h2>Upload</h2>
+		<form class="upload" action="/new_upload" method="POST">
+			<input name="tripcode" id="tripcode" placeholder="tripcode">
+			<br>
+			<br>
+			<!--FORMERLY, MUSIC, Ebooks, etc !-->
+			<select name="type">
+				<option value="nonfiction">Nonfiction</option>
+				<option value="fiction">Fiction</option>
+				<option value="periodical">Periodical</option>
+				<option value="music">Classical Music</option>
+				<option value="meme">Art</option>
+			</select>
+			<br>
+			<input name="name" placeholder="title">
+			<br>
+			<input name="date" placeholder="date"><br>
+			<input name="img" placeholder="img url"><br>
+			<input id="upload_person" name="person" placeholder="person"><button class="add_person">add person</button><button class="create_person">create person</button>
+			<br>
+			<br>
+			<!--MEDIA (EBOOK, AUDIOBOOK, NEWS ARTICLE), CODEC (x264, xvid) !-->
+			<select name="media">
+				<option value="ebook">Ebook</option>
+				<option value="audiobook">Audiobook</option>
+				<option value="article">Article</option>	
+				<option value="textbook">Textbook</option>			
+				<option value="news">News</option>
+				<option value="lecture">Lecture</option>
+				<option value="image">Digital Image</option>
+				<option value="art">Painting, art</option>
+				<option value="documentary">Documentary (xvid, x264)</option>
+				<option value="short">Short Video</option>
+				<option value="album">Album</option>
+				<option value="single">Single</option>				
+			</select>
+			<br>
+			<!--CONTAINER (MKV), FORMAT (PDF) !-->
+			<select name="format">
+				<option value="pdf">.pdf</option>
+				<option value="mp3">.mp3</option>
+				<option value="jpg">.jpg</option>
+				<option value="png">.png</option>
+				<option value="gif">.gif</option>
+				<option value="webm">.webm</option>
+				<option value="mkv">.mkv</option>
+				<option value="avi">.avi</option>
+			</select>
+			<br>
+			<!--BITRATE, RESOLUTION !-->
+			<select id="select_bitrate" name="bitrate">
+				<option value="text">text</option>
+				<option value="sd-img">sd image</option>
+				<option value="hd-img">hd image</option>
+				<option value="variable">variable mp3</option>
+				<option value="lossless">lossless</option>				
+				<option value='480p SD'>sd video</option>
+				<option value='1080p HD'>x264 HD</option>				
+			</select>
+			<br>	
+			<input name="publisher" placeholder="publisher or journal"><br>
+			<input name="edition" placeholder="edition, volume, editors"><input name="number" placeholder="no., pub date"><br><input name="pages" placeholder="pages, article #"><br>
+			<!-- location is included so that APA format can be generated in the future !-->
+			<input name="location" placeholder="location">
+			<br><br>
+			<input name="tags" placeholder="tags (comma separated)">
+			<br><br>
+			<input type="file" multiple><br>	
+			<input id="infoHash" name="infoHash" placeholder="infoHash"><br>
+			<br><textarea name="description" placeholder="Description"></textarea><br>
+			<input type="submit" value="Submit">
+		</form>
+		</div>
+		</div>
+		<br>
+		<script>
+
+			$(document).ready(function(){
+				$(".heading a").click(function(e){
+					e.preventDefault();
+				})
+
+				var client = new window.WebTorrent();
+
+
+				// HTML elements
+		      var $body = document.body
+		      var $progressBar = document.querySelector('#progressBar')
+		      var $numPeers = document.querySelector('#numPeers')
+		      var $downloaded = document.querySelector('#downloaded')
+		      var $total = document.querySelector('#total')
+		      var $remaining = document.querySelector('#remaining')
+		      var $uploadSpeed = document.querySelector('#uploadSpeed')
+		      var $downloadSpeed = document.querySelector('#downloadSpeed')
+
+			
+				$(".edit").click(function(e){
+					e.preventDefault();
+					console.log($(this).data("collection"))
+					route("/edit_doc/" + $(this).data("collection") + "/" + getSuffix($(this).attr("id")))
+				})
+        	
+				$("h1 a").click(function(e){
+					e.preventDefault();
+
+					//route("/titles/60a3c2a499b6088985f78891")
+					route("/index")
+				})
+
+				$(".torrents_route").click(function(e){
+					e.preventDefault();
+					currentPage = 1;
+					route("/titles")
+				})
+
+				$(".upload_route").click(function(e){
+					e.preventDefault();
+					route("/upload");					
+				})
+
+				$(".top10_route").click(function(e){
+					e.preventDefault();
+					route("/top10")
+				})
+
+				$(".forums_route").click(function(e){
+					e.preventDefault();
+					currentPage = 1;
+					route("/forums")
+				})
+
+				$(".classes_route").click(function(e){
+					e.preventDefault();
+					currentPage = 1;
+					route("/classes")
+				})
+
+				$(".add_class").click(function(e){
+					e.preventDefault();
+					route("/add_class")
+				})
+
+				$(".create_class").submit(function(e){
+					route("/index")
+				})
+				var currentPage = 1;
+
+				function route(path){	
+					console.log(path);				
+					history.pushState(path, '', path)
+					$(".partial").hide();
+					
+					var query = path.split("?")
+					console.log("QUERY: " + query[1])
+					var pathway = query[0].split("/");
+					router(pathway[1], query[1], {id : pathway[3], collection : pathway[2]})			
+				}
+
+				var path = window.location.pathname + window.location.search;
+				route(path)
+
+				window.addEventListener('popstate', function(event){
+					console.log("BACK BUTTON : "+ event.state);
+					var path = event.state;
+					//route(path);
+					if(path !== null){
+						var query = path.split("?")
+						var pathway = query[0].split("/");	
+						$(".partial").hide();
+					//	console.log("HERE IS THE ROUTING PATHWAY : " + pathway)
+						router(pathway[1], query[1], {id : pathway[3], collection : pathway[2]});		
+					}
+									
+				})
+			
+
+				function router(route, query, params){
+					console.log("QUERY : " + query)
+					console.log("routing to " + route)
+					var id = params.id;
+					var col = params.collection;
+					const urlParams = new URLSearchParams(window.location.search);
+					const taglist = urlParams.get('taglist');
+					const page = urlParams.get('page');
+					const view = urlParams.get('view');
+					const doc = urlParams.get('doc');
+					console.log(page);
+					switch(route){ 
+						case "index":
+							load_index();
+							break;
+						case "titles":
+							if(page) currentPage = page;
+							load_torrents(taglist);
+							paginate();
+							break;
+						case "upload":
+							load_upload();
+							break;
+						case "forums_post":
+							load_forums_post(view, doc);
+							break;
+						case "classes" :
+							if(page) currentPage = page;						
+							load_classes();
+							paginate();
+							break;
+						case "gazelle":					
+							load_gazelle(col, id);							
+							break;				
+						case "add_class" : 
+							load_add_class();
+							break;
+						case "edit_doc" :
+							load_edit_doc(col, id);
+						 	break;
+						case "top10":
+							load_top10();
+							break;
+						case "forums":
+							if(page) currentPage = page
+							load_forums(view, doc);
+							break;
+						default:
+							load_index();
+							break;
+					}		
+				}
+
+				function load_forums(view, doc){
+					//show 1st thread
+					//"?view=thread&doc=1"
+					//show 17th forum section
+					//"?view=section&doc=17"
+					$(".forums_partial").empty();
+					if(!view){
+						var h31 = document.createElement('h3');
+						$(h31).text("SolomonsHouse")
+						var h32 = document.createElement('h3');
+						$(h32).text("General Discussion")				
+						
+						var table1 = document.createElement('table');
+						$(table1).addClass("main_table");
+
+						var table2 = document.createElement("table");
+						$(table2).addClass("main_table")
+
+						$(".forums_partial").append(h31)
+						$(".forums_partial").append(table1);
+						$(".forums_partial").append("<br>")
+						$(".forums_partial").append(h32)
+						$(".forums_partial").append(table2);
+						$(".main_table").append("<tr><th></th><th>Section</th>")
+						
+						//table1: SolomonsHouse related forum sections
+						//table2: General Discussion
+						createTR(table1, "Bugs")
+						createTR(table1, "Suggestions")
+						createTR(table1, "Site Discussion")
+						
+						createTR(table2, "General Chat")
+						createTR(table2, "BitTorrent")
+						createTR(table2, "The Library")
+						
+						//get all sections
+
+						
+					}					
+					else if(view === "section"){
+						//this is for example The Library, listing all forum threads with docID 4
+						$(".forums_partial .main_table").remove();
+						$.get("/forum?view="+view+"&doc="+doc+"&page="+currentPage, function(data){
+							var button = document.createElement("button");
+							$(button).text("Make a thread");
+							$(".forums_partial").append(button);
+							console.log("HERE");
+							$(button).click(function(e){
+								e.preventDefault();
+								//doc will be a postID (mongodb id) or a section ID (0-17...)
+								route("/forums_post?view="+view +"&doc="+doc);
+							})
+
+							var table = document.createElement('table');
+							$(table).addClass("main_table");
+							$(table).append("<tr><th></th><th>Thread</th><th></tr>")
+
+							$(".forums_partial").append(table);
+							
+							console.log(data);
+
+							//this is a list of threads
+							console.log(data.result);
+							data.result.forEach(function(post){
+								createTR2(post);
+							})
+						})
+					}
+					else if(view==="thread"){
+						$(".thread").empty();
+						$.get("/forum?view="+view+"&doc="+doc+"&page=" + currentPage, function(data){
+							console.log(data)
+							var button = document.createElement("button");
+							$(button).text("Reply");
+							
+							console.log("HERE");
+							$(button).click(function(e){
+								e.preventDefault();
+								route("/forums_post?view="+view +"&doc=" +doc)
+							})
+
+							var thread = document.createElement("div");
+							$(thread).addClass("thread");
+
+							$(".forums_partial").append(thread);
+														
+							var e = document.createElement("span")
+							$(e).text(data.result[0].threadTitle)
+							$(".thread").append(e)
+
+							data.result.forEach(function(post){
+								console.log(post);
+								listThreadPost(thread, post);
+							})
+							$(".forums_partial").append(button);
+						})
+					}
+					$(".forums_partial").show();
+				}
+
+				//TODO technically possible to route to the recent id
+				$(".forums_post").submit(function(e){
+					//don't prevent default..
+					route("/forums");
+				})
+
+				function listThreadPost(thread, post){
+					var heading= document.createElement('div');
+					var forumPost = document.createElement('div')
+					$(thread).append("<br>")
+					$(thread).append("<br>")
+					$(forumPost).addClass("post")
+					$(thread).append(forumPost);
+					//this recalls Thomas Pynchon's, The Crying of Lot 49
+					$(heading).addClass('postHeading')
+					$(forumPost).append(heading);
+					var div = document.createElement('div');
+					$(div).addClass("post")
+					var tripSpan = document.createElement("span");
+					var body = document.createElement("p");
+					$(tripSpan).text(post.trip);
+					$(tripSpan).addClass("tripSpan");
+					$(heading).append("<br>")
+					$(heading).append(tripSpan);
+					$(div).append("<br>");
+					$(body).text(decodeHtml(post.postBody));
+					$(div).append(body);
+					$(forumPost).append(div);
+				}
+
+				function createTR2(post){			
+
+					var tr = document.createElement('tr');
+					var td0 = document.createElement('td');
+					$(tr).append(td0);
+					$(".forums_partial .main_table").append(tr)
+					var td1 = document.createElement('td1');
+					
+					
+					var a = document.createElement('a');
+					//workaround
+					if(post.threadTitle){
+						$(a).text(post.threadTitle);
+					}
+					else{
+						$(a).text("Untitled");
+					}
+					$(a).attr("href", "/forums?view=thread&doc="+post.threadID)
+					$(td1).append(a);
+					$(a).click(function(e){
+						e.preventDefault();
+						route("/forums?view=thread&doc="+post.threadID);
+					})
+					
+		
+
+					$(tr).append(td1);
+
+				}
+
+
+				//TODO: list doc #s in monogdb			
+				function createTR(table, section){
+					var docID = 0;
+					switch(section){
+						case "Bugs":
+							docID = 0;
+							break;
+						case "Suggestions":
+							docID = 1;
+							break;
+						case "General Chat":
+							docID = 2;
+							break;
+						case "BitTorrent":
+							docID = 3;
+							break;
+						case "The Library":
+							docID = 4;
+							break;
+						case "Site Discussion":
+							docID = 5;
+							break;
+						case "default":
+							docID = 2; 
+							break;
+					}
+
+					var tr = document.createElement('tr');
+					var td1 = document.createElement('td');
+					//spacing
+					$(tr).append(td1);
+					var td2 = document.createElement('td')
+					var a = document.createElement('a');
+					$(a).attr("href", "/forums?view=section&doc="+docID)
+					$(a).click(function(e){
+						e.preventDefault();
+						route("/forums?view=section&doc="+docID)
+					})
+					$(td2).append(a)
+					$(tr).append(td2);
+					$(a).text(section);
+					$(table).append(tr);
+				}
+
+				function load_forums_post(view, doc){
+					$(".forums_post_partial").show();
+					$('<input />').attr('type', 'hidden')				  
+				        .attr('name', "view")
+				        .val(view)
+				        .appendTo('.forums_post');
+				    $('<input />').attr('type', 'hidden')				  
+				        .attr('name', "doc")
+				        .val(doc)
+				        .appendTo('.forums_post');	
+
+				    if(view === "section"){
+				    	$("#threadTitle").show();
+				    }
+				    else if(view === "thread"){				   
+				    	$('<input />').attr('type', 'hidden')				  
+					        .attr('name', "threadID")
+					        .val(doc)
+					        .appendTo('.forums_post');
+					    $("#threadTitle").hide();
+					    $("#threadTitle").val("");	
+				    }	
+				}
+
+				function load_collage(){
+
+				}
+
+				function load_edit_doc(collection, id){
+					$(".edit_doc_partial").show();
+					$(".edit_doc_partial")
+					persons = []
+					$(".added_person").remove();
+					$("#doc_persons_upload").remove();
+					$(".add_titles").hide();
+					$(".edit_doc").attr("action", "/edit/" + collection + "/" + id)
+					console.log("loading edit doc")
+					
+					if(collection === "classes"){
+						$(".add_titles").show();		
+					}
+				}
+
+				$(".edit_doc").submit(function(e){
+					//e.preventDefault();
+					$('<input />').attr('type', 'hidden')
+				    	.attr('id', 'doc_persons_upload')
+				        .attr('name', "doc_persons[]")
+				        .val(JSON.stringify(persons))
+				        .appendTo('.edit_doc');	
+					route("/index");
+
+				})
+
+				function load_add_class(){
+					$(".add_class_partial").show();
+				}
+
+				function load_top10(){
+					//note the underscore here and serverside
+					$(".collage").empty();
+					console.log("loading top 10")
+					$.get("/top_10", function(data){
+						console.log(data);
+						
+						var dayCount = 0;
+						data.day.forEach(function(title){							
+							make10Collage("day", title, dayCount);
+							dayCount++;
+						})
+						
+						var weekCount = 0;
+						data.week.forEach(function(title){							
+							make10Collage("week", title, weekCount);
+							weekCount++;
+
+						})
+
+						var monthCount = 0;
+						data.month.forEach(function(title){
+							
+							make10Collage("month", title, monthCount);
+							monthCount++;
+						})
+
+						var yearCount = 0;
+						data.year.forEach(function(title){
+
+							make10Collage("year", title, yearCount);
+							yearCount++;
+						})
+
+						var timeCount = 0
+						data.time.forEach(function(title){
+													
+							make10Collage("time", title, timeCount);
+							timeCount++;	
+						})
+						//show partial after server query
+					$(".top10_partial").show();
+						
+
+					})
+
+				}
+
+				function make10Collage(date, title, count){
+					var div = document.createElement("div");
+					var a = document.createElement('a');
+					var img = document.createElement("img");
+					var titleSpan = document.createElement("span");
+					var tagSpan = document.createElement("span");
+
+					$(a).attr('href', "/gazelle/titles/" + title._id);
+
+					$(a).click(function(e){
+						e.preventDefault();								
+						route("/gazelle/titles/"+title._id)
+					})
+
+					var imgURL = "https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/PDF_file_icon.svg/833px-PDF_file_icon.svg.png";
+
+					if(title.img){
+						imgURL = unescapeHtml(title.img);
+					}
+
+					$(img).attr("src", imgURL);
+					$(a).append(img);
+
+					var title_span_a = document.createElement('a');
+					$(title_span_a).text(decodeHtml(title.name).toProperCase())
+					$(title_span_a).attr("href", "/gazelle/titles/"+title._id);
+					$(titleSpan).append(title_span_a);
+
+					$(title_span_a).click(function(e){
+						e.preventDefault();
+						route("/gazelle/titles/"+title._id);
+					})
+
+					$(titleSpan).addClass("collageSpan");
+					$(tagSpan).addClass("collageSpan");
+					$(tagSpan).addClass("tagSpan");
+
+					var collageDiv = document.createElement('div');
+					$(collageDiv).addClass("collageDiv");
+
+
+
+					var personSpan = document.createElement("span");
+					$(personSpan).addClass("collageSpan");
+
+					var personCounter = 0;
+					title.persons.forEach(function(person){
+						var person_span_a = document.createElement('a');
+						$(person_span_a).text(decodeHtml(person.name).toProperCase());
+						$(personSpan).append(person_span_a);
+						if(personCounter < title.persons.length - 1){
+							$(personSpan).append(", ")
+						}
+						$(person_span_a).attr('href', "/gazelle/persons/" + person._id)
+
+						$(person_span_a).click(function(e){
+							e.preventDefault();
+							route("/gazelle/persons/" + person._id)
+						})
+						personCounter++;
+					})
+
+					var tagCounter = 0;
+					title.tags.forEach(function(tag){						
+						var tag_span_a = document.createElement('a')
+						$(tag_span_a).text(tag)
+						$(tagSpan).append(tag_span_a)
+						$(tag_span_a).attr("href", "/titles")
+
+						if(tagCounter !== title.tags.length - 1){
+							$(tagSpan).append(", ")
+						}
+
+						$(tag_span_a).click(function(e){
+							e.preventDefault();
+							route("/titles?taglist="+tag)
+						})
+						tagCounter++;
+					})
+
+					$(div).append(a);
+					$(div).append("<br>")
+					$(div).append(collageDiv);
+					$(collageDiv).append(titleSpan)
+					if(title.persons.length > 0){
+						$(collageDiv).append(" by ");
+						$(collageDiv).append(personSpan);
+					}
+					$(collageDiv).append("<br>")
+					$(collageDiv).append(tagSpan);					
+
+				    
+				    //5 to a page
+				    console.log(count)
+				    if(count%5 === 0){
+				    	
+				    	//this is a row
+				    	var br = document.createElement("div")
+
+				    	if(count < 5){
+				    		$(br).attr('id', "br_1")
+				    	}
+				    	else{
+				    		$(br).attr('id', 'br_2');
+				    	}
+				    	
+				    	$(br).addClass("br");
+				   
+				    	$(".top10_partial #collage_"+date).append(br)
+				    	$(".top10_partial #collage_"+date).append("<br>")
+				    	
+				    }
+				    if(count < 5){
+				    	$(".top10_partial #collage_"+date + " #br_1").append(div);
+				    }
+				    else{
+				    	$(".top10_partial #collage_"+date + " #br_2").append(div);
+				    }
+
+
+				}
+
+				function load_gazelle(collection, id){
+					//this loads classes, titles, and persons. torrents are embedded documents within titles.
+					
+					$.get("/doc/" + id + "?collection=" + collection, function(data){
+						var doc = data.doc;
+						console.log(data);
+						var torrents = data.torrents;
+						console.log(torrents);
+						$(".collage").hide();
+						$(".description").empty();
+						$(".main_table").show();
+						if(collection === "titles"){
+							$(".gazelle_partial img").attr("src", "https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/PDF_file_icon.svg/833px-PDF_file_icon.svg.png");
+						}
+						
+						
+						$(".gazelle_partial h3").empty();
+						$(".main_table tbody").empty();
+						$(".gazelle_partial h2").text(unescapeHtml(doc.name).toProperCase())
+						var personsCount = 0;
+						if(doc.persons){
+
+							doc.persons.forEach(function(person){
+								personsCount++;
+								$(".gazelle_partial h3").append("<a id='subhead_person_" +person._id + "'>" + person.name.toProperCase() + "</a>")
+								if(personsCount < doc.persons.length){
+									$(".gazelle_partial h3").append(", ");
+								}
+
+								//TODO this way people can copy links
+								$("#subhead_person_" + person._id).attr("href", "/gazelle/persons/" + person._id)
+
+								$("#subhead_person_" + person._id).on('click', function(e){
+									e.preventDefault();
+									console.log("HERE")
+									route("/gazelle/persons/" + person._id)
+									
+								})
+							})							
+						}
+
+
+						if(collection==="persons"){
+							$(".gaz_img").attr("src", "http://www.pngmart.com/files/5/Anonymous-PNG-Image.png")
+						}
+						else if(collection==="classes"){
+
+							$(".main_table").hide();
+							$(".collage").empty();
+							$(".collage").show();
+							$(".gaz_img").attr('src', "");
+
+							if(doc.titles){
+								var count = true;
+								//optionally duplicate torrent data in classes so that the $get is unnecessary
+								var counter = 0;
+								doc.titles.forEach(function(titleID){
+								//get title img
+
+									$.get("/doc/" + titleID + "?collection=titles", function(data){
+										//if(data){
+											var div = document.createElement('div');
+											var a = document.createElement('a');
+											$(a).attr("href", "/gazelle/titles/" + titleID)
+											$(a).attr("id", "class_title_" + titleID)									
+											var img = document.createElement('img');
+											//$(img).attr('src', unescapeHtml(data.doc.img));
+											
+											
+											if(!data.doc.img){
+												$(img).attr('src', "https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/PDF_file_icon.svg/833px-PDF_file_icon.svg.png");
+											}
+											else{
+												$(img).attr('src', unescapeHtml(data.doc.img))
+											}
+											if(count){
+												if(data.doc.img){
+													$(".gaz_img").attr('src', unescapeHtml(data.doc.img))
+
+												}
+												else{
+													$(".gaz_img").attr('src', "https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/PDF_file_icon.svg/833px-PDF_file_icon.svg.png")
+												}
+											}
+											a.append(img);
+											var titleSpan = document.createElement("span");
+											var title_span_a = document.createElement("a");
+											$(title_span_a).attr("href", "/gazelle/titles/"+data.doc._id);
+											var tagSpan = document.createElement("span");
+											
+											$(titleSpan).addClass("collageSpan")
+											$(tagSpan).addClass("collageSpan")
+											$(title_span_a).text(decodeHtml(data.doc.name).toProperCase())
+
+											$(titleSpan).append(title_span_a);
+
+											var personSpan = document.createElement("span");
+											$(personSpan).addClass("collageSpan");
+
+											var personCounter = 0;
+											data.doc.persons.forEach(function(person){
+												var person_span_a = document.createElement('a');
+												$(person_span_a).text(decodeHtml(person.name).toProperCase());
+												$(personSpan).append(person_span_a);
+												if(personCounter < data.doc.persons.length - 1){
+													$(personSpan).append(", ")
+												}
+												personCounter++;
+
+												$(person_span_a).attr('href', "/gazelle/persons/" + person._id)
+
+												$(person_span_a).click(function(e){
+													e.preventDefault();
+													route("/gazelle/persons/" + person._id)
+												})
+											})
+
+
+
+											var docCount = 0;
+											data.doc.tags.forEach(function(tag){
+												var tag_span_a = document.createElement("a")
+												$(tag_span_a).attr("href", "/titles?taglist="+tag)
+												$(tag_span_a).click(function(e){
+													e.preventDefault();
+													route("/titles?taglist="+tag)
+												})
+												$(tag_span_a).text(tag)												
+												$(tagSpan).append(tag_span_a)
+												if(docCount !== data.doc.tags.length - 1){
+													$(tagSpan).append(", ")
+												}
+												docCount++;
+											})
+											console.log(counter);
+											var br;
+											if(counter%	5 === 0){
+												br = document.createElement("div");
+												$(br).addClass("br");
+												if(counter <= 4){
+													$(br).attr("id", "bre_" + counter)
+												}
+												else{
+													$(br).attr("id", "bre_2")
+												}
+												$(br).attr("id", "bre_" + counter)
+												console.log("HERE COUNTER " + counter);
+												$(".gazelle_partial .collage").append(br)
+											}
+											
+											var collageDiv = document.createElement('div');
+											$(collageDiv).addClass("collageDiv");
+
+
+											$(div).append(a);
+											$(div).append("<br>");
+											$(div).append(collageDiv);
+											$(collageDiv).append(titleSpan);
+											if(data.doc.persons.length > 0){
+												$(collageDiv).append(" by ")
+												$(collageDiv).append(personSpan);
+											}
+											$(collageDiv).append("<br>")
+											$(collageDiv).append(tagSpan);
+
+											if(counter <= 4){
+											//	$(".gazelle_partial .collage #bre_1").append(div);
+											}
+											else{
+											//	$(".gazelle_partial .collage #bre_2").append(div);					
+											}
+											$(".gazelle_partial .collage .br").last().append(div);
+											counter++;
+											
+											count = false;
+										//}
+											
+									})
+									
+									//end forEach
+								})
+								console.log("rendering img for class on gazelle partial")
+							}
+							
+							
+						}
+
+						if(doc.img){
+							console.log("rendering img on gazelle partial")
+							$(".gaz_img").attr("src", unescapeHtml(doc.img))
+						}
+						$(".edit").attr("id", "edit_" + doc._id)
+						$(".edit").data("collection", collection)
+						if(doc.description){
+							$(".description").text(decodeHtml(doc.description))
+						}
+						if(torrents){
+							torrents.forEach(function(title){
+								print_title_table(title);
+								print_torrent_table(title.torrents);
+
+							})
+						}
+						if(doc.torrents){
+							print_torrent_table(doc.torrents);
+
+						}
+						$(".gazelle_partial").show()
+					})
+				}
+
+				//todo edit loc of this startup function call
+				paginate();
+
+				
+				var numPages;
+				function load_torrents(taglist){
+
+					//history.pushState('/titles', '', '/titles');
+					
+					$(".main_table").show();
+					if(taglist)	console.log("LOADING TAGS: " + taglist)
+					$.get("/browse?page=" + currentPage + "&taglist="+taglist, function(data){
+						console.log(data);
+						if(data !== null){
+							//currentPage = data.currentPage;
+							numPages = data.numPages;							
+							$(".main_table tbody").empty();							
+							data.titles.forEach(function(title){
+
+								print_title_table(title);
+								print_torrent_table(title.torrents);
+
+							})		
+						}
+						$(".titles_partial").show();
+					})
+				}
+
+				function load_classes(){
+				
+					//currentPage = 1;
+					
+					$(".main_table").show();
+					$.get("/gazelle_classes?page=" + currentPage, function(data){
+						$(".classes_partial").show();
+							$(".main_table tbody").empty();
+						data.classes.forEach(function(clas){
+							$(".main_table tbody").append("<tr id='class_row_"+clas._id + "'><td><a id='class_" + clas._id + "' href='/gazelle/classes/" + clas._id + "'>"+ clas.name +"</a></td><td class='taglist' id='taglist_" + clas._id + "'></td></tr>")
+
+							var clasTagsCount = 0;
+							console.log($("#class_tags_" + clas._id));
+							clas.tags.forEach(function(tag){
+								clasTagsCount++;
+								console.log(tag);
+								$("#class_row_" + clas._id + ' .taglist').append("<a id='class_tag_"+ tag + "' href='/titles?taglist="+tag+"'>"+ tag +"</a>") 
+								$("#class_row_" + clas._id + " #class_tag_"+ $.escapeSelector(tag)).click(function(e){
+									e.preventDefault();
+									console.log("routing to tag")
+									currentPage = 1;
+									route("/titles?taglist="+tag);
+								})
+								if(clasTagsCount !== clas.tags.length){
+									$("#class_row_" + clas._id + " .taglist").append(", ");
+								}
+							})
+
+							$("#class_" + clas._id).click(function(e){
+								e.preventDefault();
+								route("/gazelle/classes/" + clas._id);
+							})
+						})
+						$(".classes_partial").show();
+					})
+				}
+
+				function load_titles(collection, id){
+					$.get("/doc/" + id + "?collection=" + collection, function(data){
+						console.log(data);
+						$(".gazelle_partial").show();
+						$(".gazelle_partial h2").text(data.name);
+						//console.log(data.img);
+						//console.log(decodeURI(data.img));
+						$(".gazelle_partial img").attr("src", decodeHtml(data.img))
+						print_torrent_table(data.torrents);					
+					})
+				}
+
+				function print_title_table(title){
+
+					var date_span = title.date ? "<span><b> [" + title.date + "]</b></span>" : "";
+
+					$(".main_table tbody").append("<tr id='title_" + title._id + "' class='title_row'><td class='gaz_style'></td><td><a class='title_ref' href='/gazelle/titles/" + title._id + "'><b>"+unescapeHtml(title.name).toProperCase() +"</b></a>"+ date_span +"<span id='title_persons_by_" + title._id + "'></span> <span class='title_persons'></span> <br><span class='title_tags'></span></td><td></td><td></td><td></td></tr>")
+								
+					$('#title_' + title._id + ' .title_ref').click(function(e){
+						e.preventDefault();
+						route("/gazelle/titles/" + title._id)
+					})
+
+					if(title.persons.length > 0){
+						$("#title_" + title._id + " #title_persons_by_"+title._id).text(' by ')
+
+					}	
+
+							
+					var tagCount = 0;
+					title.tags.forEach(function(tag){
+						tagCount++;
+						if(tag){
+							$("#title_" + title._id + " .title_tags").append("<a class='tag' id='tag_" + tag + "_" + tagCount + "' href='#'>"+tag+"</a>")
+
+
+							if(title.tags.length > 0 && title.tags.length !== tagCount){
+								$("#title_" + title._id + " #tag_" + $.escapeSelector(tag) + "_" + tagCount).append(", ")
+						
+							}
+						}
+						
+						$("#title_" + title._id + " .title_tags").on('click', '#tag_' + $.escapeSelector(tag) + "_" + tagCount, function(e){
+							e.preventDefault()
+								//TODO: add params to routes
+								console.log("HERE");
+								console.log("/titles?taglist="+tag)
+							currentPage = 1;
+							route("/titles?taglist=" + tag)
+							
+						})
+					})
+
+					var count = 1;
+					//console.log(title.persons);
+					title.persons.forEach(function(person){
+						
+						$("#title_" + title._id + " .title_persons").append("<a id='person_" + person._id+ "' class = 'person_ref' href='#'>" + person.name.toProperCase() + "</a>")
+						/*if(count > 1){
+							$("#person_" + person._id).append(", ");
+						}*/
+						//TODO append comma
+
+						if(title.persons.length > 0 && title.persons.length !== count){
+							$("#title_" + title._id  + " #person_" + person._id).append(", ")
+						}
+
+						//so links can be copied
+						$("#title_" + title._id + " #person_" + person._id).attr("href", "/gazelle/persons/" + person._id)
+
+						$("#title_" + title._id + " #person_" + person._id).click(function(e){
+							e.preventDefault();
+							console.log("HERE");
+							route("/gazelle/persons/" + person._id);							
+						})
+						count++;
+					})
+				}
+
+				function print_torrent_table(torrents){
+					var arr = _.groupBy(torrents, "publisher")	
+
+					
+					for (var key in arr) {					
+						var publisher = "Standard Edition"
+						if(arr[key][0].edition || arr[key][0].pages || arr[key][0].publisher){
+
+							var edition = ""
+							if(arr[key][0].edition){
+								edition = arr[key][0].edition.toProperCase() + " / ";
+							}
+
+							var pages = ""
+							if(arr[key][0].pages){
+								pages = "#"+ arr[key][0].pages + " / "
+							}
+
+							
+							if(arr[key][0].publisher){
+								console.log(arr[key][0].publisher + " HERE");
+								
+								publisher = arr[key][0].publisher.toProperCase()
+							}
+							
+							
+						}
+
+						$(".main_table tbody").append("<tr class='edition_row'><td class='gaz_style'></td><td><b>"+ publisher + "</b></td><td></td><td></td><td></td></tr>")
+
+					    if (arr.hasOwnProperty(key)) {
+					        arr[key].forEach(function(tor){
+
+					        	var media;
+					        	if(!tor.media){
+					        		media = "";
+					        	}
+					        	else{
+					        		media = tor.media + " / ";
+					        	}
+
+					        	var publisher = "Standard Edition"
+					        	if(tor.publisher){
+					        		publisher = tor.publisher.toProperCase()
+					        	}
+
+					        	var edition = ""
+					        	if(tor.edition){
+					        		edition = "ed. " + tor.edition.toProperCase() + " / "
+					        	}
+
+					        	var pages = ""
+					        	if(tor.pages){
+					        		pages = "pp. " + tor.pages + " / "
+					        	}
+
+					        	var number = ""
+					        	if(tor.number){
+					        		number = "no. " + tor.number + " / " 
+					        	}
+					        	
+					        	var format = "";
+					        	if(tor.format){
+					        		format = tor.format + " / ";
+					        	}
+					        	var bitrate = "";
+					        	if(tor.bitrate){
+					        		bitrate = tor.bitrate + " / "
+					        	}
+					        	
+					        	var time = "";
+					        	if(tor.time){
+					        		time = timeSince(Date.parse(tor.time));
+					        	}
+					        	
+					        	var snatches = ""
+					        	if(tor.snatched != null){
+					        		snatches = tor.snatched;
+					        	}
+					        	console.log(tor.snatched);
+					        	$(".main_table tbody").append("<tr class='torrent_row'><td class='gaz_style'></td><td id='data_"+tor.infoHash + "'><a href='#'>" + edition + number+ pages + media + format + bitrate + tor.tripcode + "</a><span class='dl'><a href='magnet:?xt=urn:btih:"+tor.infoHash+"&tr=wss%3A%2F%2Ftracker.btorrent.xyz&tr=wss%3A%2F%2Ftracker.openwebtorrent.com&tr=udp%3A%2F%2Ftracker.leechers-paradise.org%3A6969&tr=udp%3A%2F%2Ftracker.coppersurfer.tk%3A6969&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337&tr=udp%3A%2F%2Fexplodie.org%3A6969&tr=udp%3A%2F%2Ftracker.empire-js.us%3A1337'>[MG]</a><a href='#' class='download_torrent' id='dl_" + tor.infoHash + "'>[DL]</a></span></td><td class='tor_time'>" + time + "</td><td class='tor_size'>"+ prettyBytes(tor.size) +"</td><td id='snatches'>"+ snatches + "</td></tr>")
+					        	
+
+					        	$(".download_torrent").on('click', function(e){
+									e.preventDefault();
+									console.log($(this).prev().attr('href'));
+									downloadTorrent($(this).prev().attr('href'));								      
+								})
+
+					        })
+					    }
+					}
+				}
+
+				function downloadTorrent(href){
+					client.add(href, function(torrent){
+
+						torrent.files.forEach(function(file){
+							file.appendTo('.log')
+						})
+						//torrent.files[0].appendTo("body")//#data_" + torrent.infoHash
+						//$("#data_" + torrent.infoHash).css("height", "350px")
+						
+										 // Trigger statistics refresh
+				        torrent.on('done', onDone)
+				        setInterval(onProgress, 500)
+				        onProgress()
+
+				         // Statistics
+				        function onProgress () {
+				          // Peers
+				          $numPeers.innerHTML = torrent.numPeers + (torrent.numPeers === 1 ? ' peer' : ' peers')
+
+				          // Progress
+				          var percent = Math.round(torrent.progress * 100 * 100) / 100
+				          $progressBar.style.width = percent + '%'
+				          $downloaded.innerHTML = prettyBytes(torrent.downloaded)
+				          $total.innerHTML = prettyBytes(torrent.length)
+
+				          // Remaining time
+				          var remaining
+				          if (torrent.done) {
+				            remaining = 'Done.'
+				          } else {
+				            remaining = moment.duration(torrent.timeRemaining / 1000, 'seconds').humanize()
+				            remaining = remaining[0].toUpperCase() + remaining.substring(1) + ' remaining.'
+				          }
+				          $remaining.innerHTML = remaining
+
+				          // Speed rates
+				          $downloadSpeed.innerHTML = prettyBytes(torrent.downloadSpeed) + '/s'
+				          $uploadSpeed.innerHTML = prettyBytes(torrent.uploadSpeed) + '/s'
+				        }
+				        function onDone () {
+				         // $body.className += ' is-seed'
+				          onProgress()				          
+				          $.post("/snatched", {infoHash: torrent.infoHash}, function(data){
+
+				          })
+				        }
+
+
+					})
+				}
+
+				function load_index(){
+					//history.pushState('/index', '', '/index')
+					$(".index_partial").show();
+				}		
+
+				function load_upload(){
+					persons = [];
+					//TODO make sure this works
+					$("#persons_upload").remove();
+					$(".torrent_size").remove();
+					$(".added_person").remove();
+					$(".upload_partial").show();
+				}
+
+				$("input:file").change(function(){
+					var files = this.files; 
+					client.seed(files, function(torrent){
+						$("#infoHash").val(torrent.infoHash);
+						$(".upload").append("<a href='" + torrent.torrentFileBlobURL + "'>seed .torrent</a><a href='https://webtorrent.io/desktop/' target='_blank'> (cf. Webtorrent Desktop) </a>")
+						$('<input />').attr('type', 'hidden')
+					        .attr("name", "size")
+					        .addClass('torrent_size')
+					        .val(torrent.length)
+					        .appendTo('.upload');	
+						})
+				})
+
+				$('.upload').submit(function(){ //listen for submit event
+				    $('<input />').attr('type', 'hidden')
+				    	.attr('id', 'persons_upload')
+				        .attr('name', "persons[]")
+				        .val(JSON.stringify(persons))
+				        .appendTo('.upload');							   
+				    persons = [];
+				    route("/index");
+				    console.log($("#persons_upload").val());
+				    return true;
+				}); 
+
+				var persons = [];
+
+				$("#doc_add_person").click(function(e){
+					var that = this;
+					e.preventDefault();
+					$.post("/add_person", {'name' : $("#doc_person").val()}, function(data){
+						$(that).next().after("<span class='added_person'><br>" + data.name + "</span><br>")
+						persons.push({"_id" : data._id, "name" :data.name})
+					})
+				})
+
+				$("#doc_create_person").click(function(e){
+					var that = this;
+					e.preventDefault();
+					$.post("/create_person", {'name' : $("#doc_person").val()}, function(data){
+						$(that).next().after("<span class='added_person'><br>" + data.name + "</span>")
+						persons.push({"_id" : data._id, "name" :data.name})
+					})
+				})
+
+				$(".add_person").click(function(e){
+					var that = this;
+					e.preventDefault();
+					$.post("/add_person", {'name' : $("#upload_person").val() }, function(data){
+						$(that).next().after("<span class='added_person'><br>"+data.name+"</span>")
+						persons.push({"_id" : data._id, "name" :data.name})
+					})			
+
+				})
+
+				$(".create_person").click(function(e){
+					var that = this;
+					e.preventDefault();
+					$.post("/create_person", {'name' : $("#upload_person").val() }, function(data){
+						$(that).after("<span class='added_person'><br>"+data.name+"</span>")
+						persons.push({"_id" : data._id, "name" :data.name})
+					})
+				})
+						
+
+				function paginate(){
+					var collection = window.location.pathname.split("/")[1];
+
+					$.get("/pagination", {collection : collection}, function(data){
+						if(data !== null){
+
+							$(".pagination").empty();
+							
+					
+							var previousPage;
+							if(parseInt(currentPage) === 1){
+								previousPage = 1;
+							}
+							else{
+								previousPage = parseInt(currentPage) - 1;
+							}
+
+							var nextPage;
+							if(parseInt(currentPage) === data.numPages){
+								 nextPage = data.numPages;
+							}
+							else{
+								nextPage = parseInt(currentPage) + 1;
+							}
+
+							//TODO: Show link in page url
+
+							if(parseInt(currentPage) - 5 > 1){
+								var index = parseInt(currentPage) - 5
+							}
+							else{
+								var index = 1;
+							}
+
+							if(parseInt(currentPage) + 5 > data.numPages){
+								var index2 = data.numPages;
+							}
+							else{
+								var index2 = parseInt(currentPage) + 5;
+							}
+
+							var firstURL = updateURLParameter((window.location.pathname + window.location.search), "page", 1)
+							var prevURL = updateURLParameter((window.location.pathname + window.location.search), "page", currentPage)
+							var nextURL = updateURLParameter((window.location.pathname + window.location.search), "page", currentPage)
+							var lastURL = updateURLParameter((window.location.pathname + window.location.search), "page", currentPage)
+ 
+							$(".pagination").append("<a href='" + firstURL +"' class='page_"+ 1 +"'> [First] </a> ")
+							$(".pagination").append("<a href='" + prevURL + "' class='page_"+ previousPage +"'> [Prev] </a> ")
+							for(var i = 0; i < 10; i++){
+								$(".pagination").append("<a href class='page' id='pager_" + i + "'></a>")
+							}
+
+							var counter = 0;
+							console.log(currentPage);
+							for(var i = index; i <= index2; i++){
+								console.log("COUNTER " + i);
+								$(".pagination #pager_"+counter).text(" ["+ i + "] ");
+								$(".pagination #pager_"+ counter).addClass("page_" +i);
+								counter++;
+							}
+													
+							//$(".pagination").append("<a href class='page_" + (parseInt(currentPage) + 9) + "'>"+ (parseInt(currentPage) + 9) + "</a> | ")
+							
+							$(".pagination").append("<a href='" +nextURL+ "' class='page_"+ nextPage +"'> [Next] </a>")
+							$(".pagination").append("<a href='"+ lastURL +"' class='page_" + data.numPages + "'> [Last] </a>")
+							
+							$(".pagination a").click(function(e){
+								e.preventDefault();
+								var className = $(this).attr("class");
+								currentPage = getSuffix(className);
+								var pageNumber = getSuffix($(this).attr("href"));
+
+								console.log("ROUTING FROM PAGE TO " + window.location.pathname + window.location.search)
+								route(updateURLParameter((window.location.pathname + window.location.search), "page", currentPage));	
+								
+								
+							})
+						}
+					})
+					
+				}
+
+				/**
+				 * http://stackoverflow.com/a/10997390/11236
+				 */
+				function updateURLParameter(url, param, paramVal){
+				    var newAdditionalURL = "";
+				    var tempArray = url.split("?");
+				    var baseURL = tempArray[0];
+				    var additionalURL = tempArray[1];
+				    var temp = "";
+				    if (additionalURL) {
+				        tempArray = additionalURL.split("&");
+				        for (var i=0; i<tempArray.length; i++){
+				            if(tempArray[i].split('=')[0] != param){
+				                newAdditionalURL += temp + tempArray[i];
+				                temp = "&";
+				            }
+				        }
+				    }
+
+				    var rows_txt = temp + "" + param + "=" + paramVal;
+				    return baseURL + "?" + newAdditionalURL + rows_txt;
+				}
+
+			
+				function insertParam(key, value) {
+				    key = encodeURIComponent(key);
+				    value = encodeURIComponent(value);
+
+				    // kvp looks like ['key1=value1', 'key2=value2', ...]
+				    var kvp = document.location.search.substr(1).split('&');
+				    let i=0;
+
+				    for(; i<kvp.length; i++){
+				        if (kvp[i].startsWith(key + '=')) {
+				            let pair = kvp[i].split('=');
+				            pair[1] = value;
+				            kvp[i] = pair.join('=');
+				            break;
+				        }
+				    }
+
+				    if(i >= kvp.length){
+				        kvp[kvp.length] = [key,value].join('=');
+				    }
+
+				    // can return this or...
+				    let params = kvp.join('&');
+
+				    // reload page with new params
+				    document.location.search = params;
+				}
+				
+			
+
+				//magnet:?xt=urn:btih:220d371932c5eccef31373d6bf8e811011e559ee&dn=Continental+Tarots.pdf&tr=wss%3A%2F%2Ftracker.btorrent.xyz&tr=wss%3A%2F%2Ftracker.openwebtorrent.com&tr=udp%3A%2F%2Ftracker.leechers-paradise.org%3A6969&tr=udp%3A%2F%2Ftracker.coppersurfer.tk%3A6969&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337&tr=udp%3A%2F%2Fexplodie.org%3A6969&tr=udp%3A%2F%2Ftracker.empire-js.us%3A1337
+
+				//advanced search
+				function delay(callback, ms) {
+				  var timer = 0;
+				  return function() {
+				    var context = this, args = arguments;
+				    clearTimeout(timer);
+				    timer = setTimeout(function () {
+				      callback.apply(context, args);
+				    }, ms || 0);
+				  };
+				}
+				
+				$(".adv_search input").keyup(function(e){
+					e.preventDefault();
+					var collection = getSuffix($(this).attr('id'));
+					
+					$.post("/adv_search?collection=" + collection, { "text" : $(this).val() }, function(data){
+						console.log(data.documents);
+						$("#realtime_" + collection ).empty();
+						if(data.documents.length > 0){
+							$("#realtime_" + collection).show();
+							data.documents.forEach(function(doc){
+								if(collection === "forums"){
+									$("#realtime_" + collection).append("<span><a href='/forums?view=thread&doc=" + doc.threadID + "' class='realtime_a' id='realtime_" + doc.threadID + "'>" + doc.threadTitle + "</a></span><br>")
+									$("#realtime_" + doc.threadID).click(function(e){
+										e.preventDefault();
+										var id = getSuffix($(this).attr('id'));
+										route("/forums?view=thread&doc=" + id)
+										
+									})
+								}
+								else{
+									$("#realtime_" + collection).append("<span><a href='/gazelle'" + collection + "/" + doc._id + "' class='realtime_a' id='realtime_" + doc._id + "'>" + doc.name + "</a></span><br>")
+									$("#realtime_" + doc._id).click(function(e){
+										e.preventDefault();
+										console.log("here")
+										var id = getSuffix($(this).attr('id'));
+										console.log(id);										
+										route("/gazelle/" + collection + "/" + id);
+										
+									})
+								}
+								
+								
+								$('body').click(function(evt){    
+							       if(evt.target.id === "realtime_" + collection)
+							          return;
+							     
+							      $("#realtime_" +collection).hide();
+							      //Do processing of click event here for every element except with id menu_content
+
+								});
+							})			
+						}
+						else{
+							$("#realtime_" + collection).hide();
+						}
+
+					})
+				})
+
+				function timeSince(date) {
+
+				  var seconds = Math.floor((new Date() - date) / 1000);
+
+				  var interval = seconds / 31536000;
+
+				  if (interval > 1) {
+				    return Math.floor(interval) + " years ago";
+				  }
+				  interval = seconds / 2592000;
+				  if (interval > 1) {
+				    return Math.floor(interval) + " months ago";
+				  }
+				  interval = seconds / 86400;
+				  if (interval > 1) {
+				    return Math.floor(interval) + " days ago";
+				  }
+				  interval = seconds / 3600;
+				  if (interval > 1) {
+				    return Math.floor(interval) + " hours ago";
+				  }
+				  interval = seconds / 60;
+				  if (interval > 1) {
+				    return Math.floor(interval) + " minutes ago";
+				  }
+				  return Math.floor(seconds) + " seconds ago";
+				}
+
+				function unescapeHtml(unsafe) {
+				    return unsafe
+				        .replace(/&amp;/g, "&")
+				        .replace(/&lt;/g, "<")
+				        .replace(/&gt;/g, ">")
+				        .replace(/&quot;/g, "\"")
+				        .replace(/&#039;/g, "'")
+				        .replace(/&#x2F;/g, "/")
+				}
+
+				function decodeHtml(html) {
+				    var txt = document.createElement("textarea");
+				    txt.innerHTML = html;
+				    return txt.value;
+				}
+
+				function getSuffix(str){
+					return str.substring(str.indexOf('_') + 1);
+				}
+
+				String.prototype.toProperCase = function () {
+				    return this.replace(/\w\S*/g, function(txt){return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();});
+				};
+
+				function prettyBytes(num) {
+			        var exponent, unit, neg = num < 0, units = ['B', 'kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
+			        if (neg) num = -num
+			        if (num < 1) return (neg ? '-' : '') + num + ' B'
+			        exponent = Math.min(Math.floor(Math.log(num) / Math.log(1000)), units.length - 1)
+			        num = Number((num / Math.pow(1000, exponent)).toFixed(2))
+			        unit = units[exponent]
+			        return (neg ? '-' : '') + num + ' ' + unit
+			      }			
+
+
+
+			})
+			
+		</script>
+		<style>
+
+	      #progressBar {
+	          height: 5px;
+	          width: 0%;
+	          background-color: #35b44f;
+	          transition: width .4s ease-in-out;
+	      }
+	      body.is-seed .show-seed {
+	          display: inline;
+	      }
+	      body.is-seed .show-leech {
+	          display: none;
+	      }
+	      .show-seed {
+	          display: none;
+	      }
+	      #status code {
+	          font-size: 90%;
+	          font-weight: 700;
+	          margin-left: 3px;
+	          margin-right: 3px;
+	          border-bottom: 1px dashed rgba(255,255,255,0.3);
+	      }
+
+	      .is-seed #hero {
+	          background-color: #154820;
+	          transition: .5s .5s background-color ease-in-out;
+	      }
+	      #hero {
+	          background-color: #2a3749; /* #179b9f;#ecdb82;*/
+	          box-shadow:2px 3px 1px #c8dbd5;
+	          width:100%;
+	      }
+	      #status {
+	          color: coral; /*#ecdb82;*/
+	          font-size: 17px;
+	          padding: 5px;
+	      }
+	      a {
+	          color: #2a3749;
+	          text-decoration: none;
+	          font-family:"Oswald",sans-serif;
+	      }
+
+	      .post{
+	      	padding:55px;
+	      }
+	    
+
+	      .postHeading{
+	      	width:100%;
+	      	height:55px;
+	      	background-color:#c8dbd5;
+	      	border-radius:7px;
+	      }
+
+	      a:hover{
+	      	color:#FF7F50;
+	      }
+			/* http://meyerweb.com/eric/tools/css/reset/ 
+   v2.0 | 20110126
+   License: none (public domain)
+*/	
+
+			html, body, div, span, applet, object, iframe,
+			h1, h2, h3, h4, h5, h6, p, blockquote, pre,
+			a, abbr, acronym, address, big, cite, code,
+			del, dfn, em, img, ins, kbd, q, s, samp,
+			small, strike, strong, sub, sup, tt, var,
+			b, u, i, center,
+			dl, dt, dd, ol, ul, li,
+			fieldset, form, label, legend,
+			table, caption, tbody, tfoot, thead, tr, th, td,
+			article, aside, canvas, details, embed, 
+			figure, figcaption, footer, header, hgroup, 
+			menu, nav, output, ruby, section, summary,
+			time, mark, audio, video {
+				margin: 0;
+				padding: 0;
+				border: 0;
+				font-size: 100%;
+				font: inherit;
+				vertical-align: baseline;
+			}
+			/* HTML5 display-role reset for older browsers */
+			article, aside, details, figcaption, figure, 
+			footer, header, hgroup, menu, nav, section {
+				display: block;
+			}
+			body {
+				line-height: 1;
+			}
+			ol, ul {
+				list-style: none;
+			}
+			blockquote, q {
+				quotes: none;
+			}
+			blockquote:before, blockquote:after,
+			q:before, q:after {
+				content: '';
+				content: none;
+			}
+			table {
+				border-collapse: collapse;
+				border-spacing: 0;
+		
+			}
+
+			h1{
+				padding:24px;
+			}
+
+			h2{
+				padding:18px;
+			}
+
+			p{
+				padding:33px;
+			}
+
+			body{
+				background-color:#e6e6ff;
+				width:100%;
+			}
+
+			h1 a{
+				font-size:26px;
+				color:coral; /*#2a3749;*/
+				font-family:Georgia;
+
+				text-shadow:2px 3px #2a3749;
+				background-image: linear-gradient(to left, violet, indigo, blue, green, yellow, orange, red);
+				
+			}
+
+			.tripSpan{
+				float:right;
+			}
+
+			.heading{
+				padding:55px;
+			}
+
+			.heading li{
+				float:left;
+				padding:11px;
+			}
+
+			.add_class{
+				float:right;
+			}
+
+			.upload input{
+				
+			}
+
+			.hidden{
+				display:none;
+			}
+
+			.search_bar li{
+				float:left;
+			}
+
+			.adv_search input{
+				width:178px;
+				margin:8px;
+			}
+
+			.gaz_img{
+				padding:32px;
+			}
+
+			.gazelle_partial h3{
+				padding:13px;
+			}
+
+			.realtime_search{
+				width:178px;
+				height:200px;
+				display:none;
+				background-color:#FFBB42;
+				position:relative;
+				z-index:2;
+				top:-7;
+				left:7;
+			}
+
+			.gaz_style{
+				border-right:1px solid gold;
+			}
+
+			.realtime_search a{
+				color:#FF7F50;
+				padding:2px;
+				font-size:12px;
+			}
+
+			.index_partial span{
+				width:100%;
+				float:right;
+				text-align:left;
+			}
+
+			object{
+				width:100%;
+				height:555px;
+			}
+
+			h2{
+				font-size:18px;
+				padding:14px;
+			}
+
+			td{
+				padding:7px;
+			}
+
+			.edit{
+				float:right;
+			}
+
+			.title_row{
+				padding:12px;
+				height:33px;
+				background-color:#c8dbd5;
+			}
+
+			.edition_row, .torrent_row{
+				background-color:#DEDEDE;
+				width:100%;
+			}
+
+			.main_table{
+				width:100%;
+				box-shadow: -5px 0px 5px -3px #616161;
+				padding-left:15px;
+			}
+
+			.main_table tr{
+				border-bottom:1px solid #CDCDCD;
+				font-size:12px;
+				width:100%;
+			}
+
+			.dl{
+				float:right;
+			}
+
+			.gazelle_partial img{
+				width:176px;
+				height:246px;
+			}
+
+			/*shady */
+			.title_tags{
+				position:relative;
+				top:3px;
+			}
+
+			.forum_textarea{
+				width:500px;
+				height:300px;
+			}
+
+			.heading{
+
+			}
+			
+			.collage{
+				padding:66px;
+				font-size:12px;
+			}
+
+			.collage img{
+				padding:12px;
+				width:176px;
+				height:246px;
+			}
+
+			.tag{
+				padding:2px;
+				font-style:italic;
+			}
+
+			.collage .br div{
+				width:176px;
+				float:left;
+				margin:12px;
+			}
+
+			.collageDiv{				
+				background-color:#c8dbd5;
+				border-radius:4px;
+			}
+
+			.collageSpan{
+				width:176px;
+				font-size:12px;
+				clear:both;
+				float:none;
+				background-color:#c8dbd5;
+			}
+
+			.tagSpan{
+				font-style:italic;	
+			}
+
+			.top10_partial .collage{
+				height: 720px;
+			}
+
+			.br{
+				float:none;
+				clear:both;
+				width:1024px;
+			}
+
+			#wrapper{
+				
+			}
+
+		</style>
+	</body>
+</html>
