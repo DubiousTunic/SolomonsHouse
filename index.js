@@ -2,8 +2,6 @@
 //TODO: gazelle titles show torrents
   TODO: get rid of whitespace on tags
   //check tags on create class
-  //get pages working with search query params
-  //TODO: change nonfiction to fiction [db]
   //todo: delete class
   //todo: empty string getting added to tag uploaded when tags absent (did a frontend hotfix)
   //TODO: Time for titles
@@ -30,7 +28,7 @@ const uri = "mongodb+srv://root:root@cluster0.k4kb4.mongodb.net/SolomonsHouse?re
 const { check, validationResult } = require('express-validator');
 const port = 3000
 
-const PAGE_LIMIT = 15;
+const PAGE_LIMIT = 27;
 
 var ObjectId = require('mongodb').ObjectId;      
 
@@ -59,6 +57,36 @@ app.listen(port, () => {
 
 var route = "";
 
+app.get("/load_index", function(req,res){
+  load_index(function(err, result){
+    if(err){
+      console.log(err);
+    }
+    else{
+      res.json({result})
+    }
+  })
+})
+
+function load_index(cb){
+  const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+
+
+//gets 5 most recent docs
+  client.connect(err => {
+    const col = client.db("SolomonsHouse").collection("titles");
+  //selects posts with "t" in the thread variable
+    col.find().sort({time: -1}).limit(5).toArray(function(err, docs){
+     client.close(); 
+     if(err){
+      cb(err);
+     }
+     else{
+      cb(null, docs);
+     }
+    })
+  })
+}
 
 app.post('/new_upload', [
     check('tripcode').trim().escape(),
@@ -72,7 +100,7 @@ app.post('/new_upload', [
     check('format').trim().escape(),
     check('media').trim().escape(),
     check('type').not().isEmpty().trim().escape().toLowerCase(),
-    check('date').trim().escape(),
+    check('date').trim().escape().toLowerCase(),
     check('edition_date').trim().escape().toLowerCase(),
     check('form').trim().escape().toLowerCase(),
     check('format').trim().escape().toLowerCase(),
@@ -81,12 +109,19 @@ app.post('/new_upload', [
     check('location').trim().escape(),
     check('pages').trim().escape(),
     check('description').trim().escape(),
-    check('number').trim().escape()
+    check('number').trim().escape(),
+    check('class').trim().escape(),
+    check('codec').trim().escape(),
+    check('release').trim().escape()
   ],
   function(req, res) {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
+    }
+
+    if(req.body.classID && !ObjectId.isValid(req.body.classID)){
+      return res.status(400).json({errors : "ClassID not valid."})
     }
 
     var trip;
@@ -111,12 +146,16 @@ app.post('/new_upload', [
       "persons" : JSON.parse(decodeHtml(req.body.persons)),
       "name" : req.body.name,
       "tags" : tags,
-      "date" : req.body.date,      
+      "date" : req.body.date,  
+      "time" : new Date(),
       "img" : req.body.img,
-      "description" : req.body.description
+      "description" : req.body.description,
+      "comments" : [],
+      "snatched" : 0
     }
 
     var torrentInfo = {
+      "release" : req.body.release,
       "tripcode" : trip,
       /*publisher, edition, pages: this is experimental */ 
       "publisher" : req.body.publisher,
@@ -132,6 +171,10 @@ app.post('/new_upload', [
       "format" :req.body.format,
       "bitrate" : req.body.bitrate,
 
+      /* PTP adds codec; PDFs have no equiv */
+
+      "codec" : req.body.codec,
+
       "size" : req.body.size,
       "time" : new Date(),     
       "infoHash" : req.body.infoHash,      
@@ -139,7 +182,7 @@ app.post('/new_upload', [
       "snatched" : 0
     }
 
-    upload(titleInfo, torrentInfo, function(err, result){
+    upload(titleInfo, torrentInfo, req.body.classID, function(err, result){
       if(err){
         console.log(err)
         res.status(400).send();
@@ -156,7 +199,7 @@ app.post('/new_upload', [
 
 
 
-function upload(titleInfo, torrentInfo, kb){
+function upload(titleInfo, torrentInfo, classID, kb){
   const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
 
   client.connect(err => {
@@ -174,28 +217,34 @@ function upload(titleInfo, torrentInfo, kb){
     delete titleInfo["persons"]
     delete titleInfo["tags"]
 
-    async.series([
+    async.waterfall([
       function (cb){
         const col = client.db("SolomonsHouse").collection("titles");
-        col.findOneAndUpdate({name: titleInfo.name, media: titleInfo.media},
+        col.findOneAndUpdate({name: titleInfo.name, type: titleInfo.type},
         {
           $addToSet: {persons: { $each: persons}, 
             tags: { $each: tags }, 
             torrents: torrentInfo}, 
-          $set: titleInfo }, 
+          $set: titleInfo,
+          $max : {
+            max_size : torrentInfo.size
+          } }, 
           {upsert: true}, 
         function(err,doc) {
          if (err) { 
+          console.log(err);
           cb(err);
          }
          else { 
           //console.log("Updated " + doc.value.torrents);
+          console.log(doc);
           cb(null, doc.value);
           
         }
        });  
       },
-      function(cb){
+      function(doc1, cb){        
+        console.log("DOCUMENT: " + doc1)
         const col = client.db("SolomonsHouse").collection("torrents");
          col.findOneAndUpdate({infoHash: torrentInfo.infoHash},
         {
@@ -208,19 +257,19 @@ function upload(titleInfo, torrentInfo, kb){
          }
          else { 
           //console.log("Updated " + doc.value.torrents);
-          cb(null, doc.value);
+          cb(null, doc1);
           
         }
        });  
       }
-
      ],function(err, result){
       if(err){
         kb(err);
       }
       else{
-        kb(null, result[0]) 
         client.close();
+        kb(null, result) 
+       
       }
         
      })
@@ -255,7 +304,7 @@ function forum(view, doc, page, cb){
     // perform actions on the collection object
     if(view === "section"){
       //make sure you parseInt since sanitization stringifies everything
-      col.find({ "section" : parseInt(doc), "$and":[{"threadTitle":{"$ne":""}}]}).limit(77).sort({_id: -1}).toArray(function(err, docs){
+      col.find({ "section" : parseInt(doc), "$and":[{"thread":{"$ne":""}}]}).sort({recentDate: -1}).skip((page - 1) * PAGE_LIMIT).limit(PAGE_LIMIT).toArray(function(err, docs){
         
       if(err){
         cb(err);
@@ -273,7 +322,7 @@ function forum(view, doc, page, cb){
     else if(view==="thread"){
       console.log("PAGE : " + page);
       console.log("HERE IN THREAD " + doc);
-      col.find({ threadID : ObjectId(doc)}).limit(77).sort({_id: 1}).toArray(function(err, docs){
+      col.find({ threadID : ObjectId(doc)}).sort({_id: 1}).skip((page - 1) * PAGE_LIMIT).limit(PAGE_LIMIT).toArray(function(err, docs){
         
       if(err){
         cb(err);
@@ -286,25 +335,39 @@ function forum(view, doc, page, cb){
         
     });
     }
+    else{
+      col.find({"$and":[{"thread":{"$ne":""}}]}).sort({recentDate: -1}).skip((page - 1) * PAGE_LIMIT).limit(PAGE_LIMIT).toArray(function(err, docs){
+        
+      if(err){
+        cb(err);
+      }
+      else{
+        cb(null, docs);
+        client.close();
+      }
+        
+    });
+    }
   })
 }
 
 //doc points to the section # when creating a new thread
-app.post("/forum_post", [check("tripcode").trim().escape(), check('threadTitle').trim().escape(), check("threadID").trim().escape(), check('doc').trim().escape(), check("postBody").trim().escape().isLength({max : 3000})], function(req,res){
+app.post("/forum_post", [check("tripcode").trim().escape(), check('section').trim().escape(), check('thread').trim().escape(), check('threadTitle').trim().escape(), check("threadID").trim().escape(), check('doc').trim().escape(), check("postBody").trim().escape().isLength({max : 3000})], function(req,res){
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({ errors: errors.array() });
   }    
 
-  //threadTitle is false when body is a reply to a thread
+  //TODO: get threadTitle on clientside when view is thread
   //threadID will be added in thread replies form (when view is thread)
   //TODO: dont allow empty thread title
   var threadID;
+  var postCount;
 
-
-  if(req.body.threadTitle){
+  if(req.body.thread){
     //this is a thread
     threadID = ObjectId();
+    postCount = 0;
   }
   else{
     //this is not a thread; threadID comes from the clientside
@@ -322,13 +385,13 @@ app.post("/forum_post", [check("tripcode").trim().escape(), check('threadTitle')
   }
 
   var postInfo = {
-    section : parseInt(req.body.doc),
+    section : parseInt(req.body.section),
     threadTitle : req.body.threadTitle,
     threadID : threadID,
     postBody : req.body.postBody,
     date : new Date(),
-    trip: trip
-
+    trip: trip,
+    postCount  : postCount
   }
 
   console.log(postInfo);
@@ -343,23 +406,98 @@ app.post("/forum_post", [check("tripcode").trim().escape(), check('threadTitle')
   })
 })
 
-function forum_post(view, postInfo, cb){
+function forum_post(view, postInfo, kb){
+
+    
+    // perform actions on the collection object
+    console.log(view);
+    //if(view === "section"){
+      async.waterfall([
+        function(cb){
+          const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+
+          client.connect(err => {
+          const col = client.db("SolomonsHouse").collection("forums");
+
+           col.insertOne(postInfo, function(err, docs){
+                
+              if(err){
+                cb(err);
+              }
+              else{
+                client.close();
+                cb(null, postInfo);
+                
+              }
+                
+            });
+          })
+        },
+        function(postInfo, cb){
+          const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+
+
+          client.connect(err => {
+            const col = client.db("SolomonsHouse").collection("forums");
+          //selects posts with "t" in the thread variable
+            col.updateOne({thread : { $nin : [""] }, threadID : new ObjectId(postInfo.threadID)},
+            {$set : { recentTrip : postInfo.trip, recentDate : postInfo.date}, $inc : { postCount : 1}}, function(err, doc){
+             client.close(); 
+             cb(null);
+            })
+          })
+        }
+        ], function(err){
+          
+          if(err){
+            kb(err);
+
+          }
+          else{
+            kb(null);
+          }
+        })
+     
+  //  }
+    //else{
+     // cb(null);
+   //   client.close();
+   // }
+    
+  
+}
+
+app.get("/load_forums_posting", [check('doc').trim().escape()], function(req,res){
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }    
+  console.log("DOC: " + req.query.doc);
+  load_forums_posting(req.query.doc, function(err, result){
+    if(err){
+      console.log(err)
+    }
+    else{
+      res.json({result});
+    }
+  })
+})
+
+function load_forums_posting(doc, cb){
   const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
 
 
   client.connect(err => {
     const col = client.db("SolomonsHouse").collection("forums");
-    // perform actions on the collection object
-    console.log(view);
+
     //if(view === "section"){
-      col.insertOne(postInfo, function(err, docs){
-        
+      col.findOne({threadID : new ObjectId(doc)}, function(err, doc){
       if(err){
         cb(err);
       }
-      else{
-        cb(null, docs);
+      else{        
         client.close();
+        cb(null, doc);
       }
         
     });
@@ -369,7 +507,7 @@ function forum_post(view, postInfo, cb){
    //   client.close();
    // }
     
-  })
+  })  
 }
 
 //see top_10 has an underscore here for the serverside. the clientside route is top10 and they cannot be identical,
@@ -510,7 +648,7 @@ function top_10(kb){
 
 
 app.post("/edit/:collection/:id", [check('doc_tags').trim().escape().toLowerCase(), check('id').trim().escape(), check('collection').trim().escape(), check('doc_title_id').trim().escape(), check('doc_name').trim().escape().toLowerCase(), check('doc_img').trim().escape(),
-  check('doc_description').trim().escape(), check('doc_img').trim().escape(), check('doc_date').trim().escape(), 
+  check('doc_description').trim().escape(), check('doc_img').trim().escape(), check('doc_date').trim().escape().toLowerCase(), 
   check('doc_persons').trim().escape().toLowerCase(), check("nontorrents").trim().escape(), check("nontags").trim().escape(), check('nonpersons').trim().escape().toLowerCase()],
   function(req, res){
     const errors = validationResult(req);
@@ -524,7 +662,9 @@ app.post("/edit/:collection/:id", [check('doc_tags').trim().escape().toLowerCase
     //clear whitespace from tags
     var tags = []
     req.body.doc_tags.split(",").forEach(function(tag){
-      tags.push(tag.trim().replace(/ /g,"."));
+      if(tag){
+        tags.push(tag.trim().replace(/ /g,"."));
+      }
     })
 
     var docInfo = {
@@ -659,23 +799,61 @@ function edit_doc(id, collection, docInfo, kb){
         })  
       }
       //get title name and tags
+      //this is when a titleID is added to a class "gazelle" document
       else if(title_id){
-        
-        col.updateOne({_id: new ObjectId(id)}, 
-        {
-          $addToSet: 
-            { titles : title_id}
-        }, function(err, docs){
-          if(err){
-            kb(err);
+        async.waterfall([
+          //first find title 
+          function(cb){
+            var col2 = client.db("SolomonsHouse").collection("titles"); 
+            col2.findOne({_id : new ObjectId(title_id)}, function(err, doc){
+              if(err){
+                cb(err)
+              }
+              else{
+                cb(null, doc);
+              }
+            })
           }
-          else{
-            console.log("DOCS " + docs);
-            kb(null, docs )//, numPages: numPages});
-            client.close();   
-          }
+          ,
+          function(title, cb){
+            var titleObj = {
+              _id : ObjectId(title._id),
+              name : title.name,
+              img : title.img,
+              tags : title.tags,
+              persons:  title.persons,
+              date : title.date
+            }
+            col.findOneAndUpdate({_id: new ObjectId(id)}, 
+                {
+                  //title_id should be a string..
+                  $addToSet: 
+                    { titleList : titleObj},
+                  $inc : { numTitles : 1},
+                  $set : { time : new Date()}
+                }, function(err, docs){
+                  if(err){
+                    kb(err);
+                  }
+                  else{
+                    console.log("DOCS " + docs);
+                    kb(null, docs )//, numPages: numPages});
+                     
+                  }
 
-        })   
+                })  
+          }
+          ], function(err, result){
+            client.close();  
+            if(err){
+              kb(err);
+            }
+            else{
+              kb(null, result);
+            }
+          })
+        
+        
       }
       else{
         col.updateOne({_id: new ObjectId(id)}, 
@@ -727,7 +905,7 @@ function snatched(infoHash, cb){
     // perform actions on the collection object
 
     console.log("SNATCHED! " + infoHash);
-    col.updateOne({ "torrents.infoHash" : infoHash}, {$inc: { "torrents.$.snatched" : 1}}, function(err, docs){
+    col.updateOne({ "torrents.infoHash" : infoHash}, {$inc: { "torrents.$.snatched" : 1, "snatched" : 1}}, function(err, docs){
         
       if(err){
         cb(err);
@@ -742,44 +920,222 @@ function snatched(infoHash, cb){
 }
 
 
-app.get('/pagination', [check('collection').trim().escape().not().isEmpty()], (req,res) => {
+app.get('/pagination', [check('action').trim().escape(), check('publisher').trim().escape().toLowerCase(), check('date').trim().escape(), check('person').trim().escape().toLowerCase(), check('format').trim().escape(), check('collection').trim().escape().not().isEmpty(), check('terms').trim().escape(), check('type').trim().escape(), check("search").trim().escape(), check('tags').trim().escape(), check('taglist').trim().escape(), check("view").trim().escape(), check("doc").trim().escape()], (req,res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({ errors: errors.array() });
   }
-  paginate(req.query.collection, function(err, result){
-    var numPages = Math.ceil(result / PAGE_LIMIT);
-    console.log(numPages);
-    res.json({numPages : numPages})
 
+  var tags = [];
+  if(req.query.tags !== "null"){
+     //clear whitespace from tags    
+    req.query.tags.split(",").forEach(function(tag){
+      if(tag){
+       tags.push(tag.trim().replace(/ /g,"."));
+      }
+    })
+  }
+  else{
+    tags = []
+  }
+
+  paginate(req.query.action, req.query.media, req.query.bitrate, req.query.edition, req.query.number, req.query.pages, req.query.collection, req.query.view, req.query.doc, req.query.taglist, req.query.publisher, req.query.date, req.query.person, req.query.format, req.query.terms, tags, req.query.types, req.query.search, function(err, result){
+    if(err){
+      console.log(err);
+    }
+    else{
+
+      var numPages = Math.ceil(result / PAGE_LIMIT);
+      console.log(numPages);
+
+      res.json({numPages : numPages})
+ 
+    }
   })
 })
 
-function paginate(collection, cb){
-  const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+function paginate(action, media, bitrate, edition, number, pages, collection, view, doc, taglist, publisher, date, person, format, terms, tags, types, search, cb){
+
+  console.log("COLLECTION : " + collection)
+  if(collection === "torrents"){
+    collection = "titles";
+  }
+  if(collection === "forums"){
+    
+   const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
 
 
-  client.connect(err => {
-    const col = client.db("SolomonsHouse").collection(collection);
-    // perform actions on the collection object
+      client.connect(err => {
+        const col = client.db("SolomonsHouse").collection("forums");
+        // perform actions on the collection object
+        var query = {}
 
-    col.countDocuments({}, function(err, numDocs){
-        
-      if(err){
-        cb(err);
+        if(view === "section"){
+          console.log("THERE");
+          query = {
+            section : parseInt(doc),
+            "$and":[{"thread":{"$ne":""}}]
+          }
+        }
+        else if(view === "thread"){
+          query = {
+            threadID : ObjectId(doc)
+          }
+        }
+        col.countDocuments(query, function(err, numDocs){
+            
+          if(err){
+            cb(err);
+          }
+          else{
+            console.log("NUMDOCS : " + numDocs)
+            cb(null, numDocs);
+            client.close();
+          }
+            
+        });
+    })
+  }
+  else if(search === "true"){     
+    console.log("SEARCH : " + search);
+   const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+
+      client.connect(err => {
+    const col = client.db("SolomonsHouse").collection("titles");
+     var typeList = []
+     console.log(types);
+     if(types !== "null"){
+      JSON.parse(decodeHtml(types)).forEach(function(type){
+      switch(parseInt(type)){
+        case 0 : 
+          typeList.push("nonfiction");
+          break;
+        case 1:
+          typeList.push("fiction");
+          break;
+        case 2:
+          typeList.push("music")
+          break;
+        case 3:
+          typeList.push('art');
+          break;
+        case 4:
+          typeList.push("documentary");
+          break;
+        case 5:
+          typeList.push('news')
+          break;
+        default:
+          break;
       }
-      else{
-        cb(null, numDocs);
-        client.close();
+     })
+     }
+
+     if(typeList.length === 0){
+      typeList = ["nonfiction", "fiction","music","art","documentary", "news"];
+     }
+
+     var query = {}
+     if(action === "basic" || action === "null"){
+        if(tags.length !== 0){
+          query.tags = { $all : tags }
+        }
+        if(terms){
+          query.$text = { $search : terms};
+        }
+     }
+     else if(action==="advanced"){
+      if(tags.length !== 0){
+        query.tags = { $all : tags }
       }
+      if(terms){
+          query.$text = { $search : terms};
+      }
+      if(date){
+          query.date = date
+        }
+        if(publisher){
+          console.log("PUBLISHER: " + publisher)
+          query["torrents.publisher"] = publisher        
+        }
+        if(format){
+          query["torrents.format"] = format
+        }
+        if(person){
+          query["persons.name"] = person;
+        }
+        if(media){
+          query["torrents.media"] = media
+        }
+        if(bitrate){
+          query["torrents.bitrate"] = bitrate
+        }
+        if(edition){
+          query["torrents.edition"] = edition
+        }
+        if(number){
+          query["torrents.number"] = number
+        }
+        if(pages){
+          query["torrents.pages"] = pages;
+        }
+     }
+            
+        query.type = { $in : typeList}        
+
+        console.log("----PAGINATION-----")
+        console.log(query);
         
-    });
-  })
+        col.countDocuments(query, function(err, numDocs){
+               
+        if(err){
+          console.log(err);
+          cb(err);
+        }
+        else{
+          console.log("NumDocs " + numDocs);
+          cb(null, numDocs)//, numPages: numPages});
+          client.close();  
+        }    
+
+       });
+      })
+  }
+  else{
+
+    if(taglist){
+      query = { tags : taglist }
+      console.log(query);
+    }
+    else{
+      query = {}
+    }
+    const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+
+
+    client.connect(err => {
+      const col = client.db("SolomonsHouse").collection(collection);
+      // perform actions on the collection object
+
+      col.countDocuments(query, function(err, numDocs){
+          
+        if(err){
+          cb(err);
+        }
+        else{
+          cb(null, numDocs);
+          client.close();
+        }
+          
+      });
+    })
+  }
+  
 
 }
 
 app.get('/browse', 
-  [check('page').trim().escape(), check('taglist').trim().escape()],
+  [check('order_by').trim().escape(), check("sort_by").trim().escape(), check('page').trim().escape(), check('action').trim().escape(), check("edition").trim().escape().toLowerCase(), check("bitrate").trim().escape(), check("media").trim().escape(), check("number").trim().escape().toLowerCase(), check("pages").trim().escape().toLowerCase(), check("publisher").trim().escape().toLowerCase(), check("date").trim().escape(), check('search').trim().escape(), check('terms').trim().escape().toLowerCase(), check('types').trim().escape(), check("tags").trim().escape(), check("person").trim().escape().toLowerCase(), check('taglist').trim().escape()],
   (req,res) => {   
   const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -792,25 +1148,76 @@ app.get('/browse',
     var page = parseInt(req.query.page)
   }
 
-  console.log("PAGE : " + page, "TAGLIST: " + req.query.taglist);
-  load_titles(page, req.query.taglist, function(err, result){
+  console.log("HERE!!!!!! " + req.query.types)
+
+  //this is not for taglist but for tags.
+  // taglist is currently not an Array but a single string element! uh oh
+  var tags = [];
+  if(req.query.tags !== "null"){
+     //clear whitespace from tags    
+    req.query.tags.split(",").forEach(function(tag){
+      if(tag){
+       tags.push(tag.trim().replace(/ /g,"."));
+      }
+    })
+  }
+  else{
+    tags = []
+  }
+
+  console.log("PAGE : " + page, "TAGLIST: " + req.query.taglist + "PUBLISHER: " + req.query.publisher);
+  load_titles(req.query.order_by, req.query.sort_by, req.query.action, req.query.media, req.query.bitrate, req.query.edition, req.query.number, req.query.pages, page, req.query.publisher, req.query.date, req.query.person, req.query.format, req.query.terms, req.query.types, tags, req.query.taglist, req.query.search, function(err, result){
    // console.log(result);
-    var numPages = result.numPages;
-    var titles = result.documents;
+    //var numPages = result.numPages;
+   
     if(err) {
       console.log(err);
       res.status(400).send();
     }
     else{
-      res.json({titles : titles, numPages : numPages, currentPage : page})
+      var titles = result.documents;
+      res.json({titles : titles, currentPage : page})
     }
   })
 })
 
 //this is called on browse. the app ajax calls /browse?query when the clientside route is /titles. these can't 
 //have identical names because otherwise i cant separate clientside and serverside routing
-function load_titles(page, taglist, kb){
+function load_titles(order_by, sort_by, action, media, bitrate, edition, number, pages, page, publisher, date, person, format, terms, types, tags, taglist, search, kb){
    const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+
+   var typeList = []
+   console.log("HERE " + types);
+   if(types !== "null"){
+    JSON.parse(decodeHtml(types)).forEach(function(type){
+    switch(parseInt(type)){
+      case 0 : 
+        typeList.push("nonfiction");
+        break;
+      case 1:
+        typeList.push("fiction");
+        break;     
+      case 2:
+        typeList.push("music")
+        break;
+      case 3:
+        typeList.push('art');
+        break;
+      case 4:
+        typeList.push("documentary");
+        break;
+      case 5:
+        typeList.push("news");
+        break;
+      default:
+        break;
+    }
+   })
+   }
+
+   if(typeList.length === 0){
+    typeList = ["nonfiction", "fiction", "music","art","documentary","news"];
+   }
 
     client.connect(err => {
       const col = client.db("SolomonsHouse").collection("titles");
@@ -820,11 +1227,97 @@ function load_titles(page, taglist, kb){
       
       var numPages;
       console.log("TAGLIST : " +  taglist)
+      var order;
+        if(order_by === "desc"){
+          order = -1
+        }
+        else{
+          order = 1
+        }
+
+        var sort = {};
+
+        if(!sort_by || sort_by === "null"){
+          sort = {
+            time : -1
+          }
+        }
+        else{
+          sort[sort_by] = order;  
+        }
+        console.log(sort);
       //not sure how to modify query based on search params. did it this way, disjunctive conditional
       if(taglist !== "null"){
         console.log("TAGLIST NOT NULL");
         var query = { tags : taglist }
-        col.find(query).skip((page - 1) * PAGE_LIMIT).limit(PAGE_LIMIT).sort({_id: -1}).toArray(function(err, documents){
+
+        col.find(query).sort(sort).skip((page - 1) * PAGE_LIMIT).limit(PAGE_LIMIT).toArray(function(err, documents){
+               
+        if(err){
+          kb(err);
+        }
+        else{
+          kb(null, { documents : documents })//, numPages: numPages});
+          client.close();  
+        }    
+
+       });
+      }
+      //search === 'true'
+      else if(search !== "null"){
+
+        var query = {}
+        if(action ==="basic" || !action || action === "null"){
+          if(tags.length !== 0){
+          query.tags = { $all : tags }
+          }
+          if(terms){
+            query.$text = { $search : terms};
+          }
+        }
+        else if(action ==="advanced"){
+          if(tags.length !== 0){
+          query.tags = { $all : tags }
+          }
+          if(terms){
+            query.$text = { $search : terms};
+          }
+          console.log("----ADVANCED SEARCH-----\n" + media + publisher);
+          if(date){
+            query.date = date
+          }
+          if(publisher){
+            console.log("PUBLISHER: " + publisher)
+            query["torrents.publisher"] = publisher        
+          }
+          if(format){
+            query["torrents.format"] = format
+          }
+          if(person){
+            query["persons.name"] = person;
+          }
+          if(media){
+            query["torrents.media"] = media;
+          }
+          if(bitrate){
+            query["torrents.bitrate"] = bitrate;
+          }
+          if(edition){
+            query["torrents.edition"] = edition;
+          }
+          if(number){
+            query["torrents.number"] = number;
+          }
+          if(pages){
+            query["torrents.pages"] = pages;
+          }
+        }        
+        
+        query.type = { $in : typeList}        
+
+        console.log(query);
+        
+        col.find(query).sort(sort).skip((page - 1) * PAGE_LIMIT).limit(PAGE_LIMIT).toArray(function(err, documents){
                
         if(err){
           kb(err);
@@ -837,7 +1330,7 @@ function load_titles(page, taglist, kb){
        });
       }
       else{
-        col.find().skip((page - 1) * PAGE_LIMIT).limit(PAGE_LIMIT).sort({_id: -1}).toArray(function(err, documents){
+        col.find().sort(sort).skip((page - 1) * PAGE_LIMIT).limit(PAGE_LIMIT).toArray(function(err, documents){
                
         if(err){
           kb(err);
@@ -1058,7 +1551,9 @@ app.post('/create_class', [],
     if(req.body.tags !== ""){
        //clear whitespace from tags    
       req.body.tags.split(",").forEach(function(tag){
-        tags.push(tag.trim().replace(/ /g,"."));
+        if(tag){
+          tags.push(tag.trim().replace(/ /g,"."));
+        }
       })
     }
     else{
@@ -1074,13 +1569,69 @@ function create_class(name, tags, cb){
 
   client.connect(err => {
     const col = client.db("SolomonsHouse").collection("classes")
-    col.insertOne({name : name, tags : tags}, function(err, response){
+    col.insertOne({name : name, numTitles : 0, tags : tags}, function(err, response){
       
       if(err){
         cb(err)
       }
       else{
         cb(null, response.ops[0])
+        client.close();
+      }
+
+    })
+  })
+}
+
+
+app.post('/comment', [check('_id').trim().escape(), check('body').trim().escape().isLength({max : 3000}).not().isEmpty(), check('trip').trim().escape()],
+  function(req,res){
+
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+    if(!ObjectId.isValid(req.body._id)){
+      return res.status(400).json({errors : "TitleID invalid"})
+    }
+    console.log("HERE!!!!!!!!!!!!!!!!")
+    post_comment(req.body._id, req.body.body, req.body.trip, function(err, result){
+      if(err){
+        console.log(err);
+      }
+      else{
+        res.status(204).send();
+      }
+    })
+  })
+
+function post_comment(_id, body, trip, cb){
+  var poster;
+    if(trip === ""){
+      poster = "Anonymous"
+    }
+    else{
+      poster = tripcode(trip);
+    }
+
+    var comment = {
+      _id : ObjectId(),
+      tripcode : poster,
+      body : body,
+      time: new Date()
+    }
+    console.log(comment);
+  const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+
+  client.connect(err => {
+    const col = client.db("SolomonsHouse").collection("titles")
+    col.updateOne({_id : new ObjectId(_id)}, {$push : {comments :comment}}, function(err, response){
+      
+      if(err){
+        cb(err)
+      }
+      else{
+        cb(null, response)
         client.close();
       }
 

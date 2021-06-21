@@ -4,17 +4,14 @@
 	TODO: top 10
 	TODO: realtime seeders/leechers
 	TODO: title is member of class
-	TODO: two back buttons needed when title clicked
+	TODO: two back buttons needed when title clicked (?)
 	TODO: extra comma on title page for tags (?)
-	TODO: torrent file download link (on main page??)
 	TODO: find way to regulate deletions (of titles)
 	TODO: show media type on browse page (etc)
-	TODO: torrent info dropdown
-	TODO: show partials after server query so data doesn't ghost in
-	TODO: sort by titles (with routes?)
-	TODO: top 10 sometimes doesn't load (?)
+	TODO: sort by date doesn't seem to work
+	TODO: forums sometimes doesn't load
 	TODO: more on top 10, classes frontend	TODO: 
-	TODO: seed images clientside rather than external linking them...this also req editing doc edit page
+	TODO: seed images clientside rather than external linking them...this also req editing doc edit page OR encourage imgur uploads
 	TODO: size, snatches in title row
 	TODO: seeders/leechers
 	TODO: press enter to search
@@ -23,7 +20,13 @@
 	TODO: taglist route should reduce pages
 	TODO: identical titles
 	TODO: publisher dupe
-	TODO: make pagination work for forums
+	TODO: ranges in year search
+	TODO: sort/orderby on classes and persons
+	TODO: person names unique?
+	TODO: only show 1 of each forum realtime search
+	TODO: make a search reset button
+	TODO: pages in comment section
+	TODO: tag collection (?)
 !-->
 	<head>
 		<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -33,12 +36,16 @@
 	</head>
 	<body>
 
-		<div id="wrapper">
-		<h1><a href="/index">SolomonsHouse</a></h1><ul class="heading">			
+		
+		<h1><a href="/index">SolomonsHouse</a></h1>
+		<ul class="panel">
 			<li><a href="/upload" class="upload_route">Upload</a></li>
-			<li><a href="/titles" class="torrents_route">Titles</a></li>			
-			<li><a href="/top10" class="top10_route">Top 10</a></li>
+		</ul>
+		<ul class="heading">			
+			
+			<li><a href="/torrents" class="torrents_route">Torrents</a></li>			
 			<li><a href="/classes" class="classes_route">Classes</a></li>
+			<li><a href="/top10" class="top10_route">Top 10</a></li>
 			<li><a href="/forums" class="forums_route">Forums</a></li>
 		</ul>
 		<ul class="search_bar">
@@ -99,38 +106,56 @@
 	        </div>
 	      </div>
     </div>
+    <div id="wrapper">
+    </div>
 		<br><br>
 			<div class="log">
 		</div>
+
 		<div class="partial index_partial">
-			<br>			
-			<span>Nonfiction & fiction ebooks and audiobooks. Classical Music. Documentaries. All in the public domain.</span>
-			<br><br>
-			<span>Masterful, modest, feast thou with the gods.</span>
+			<div class="indexPost">
+				<div class="postHeading"><span>Most recent torrents</span></div>
+				<div id="indexTiles"></div>
+			</div>			
+			<div class="indexPost">
+				<div class="postHeading"><span id="spanRight">1622912660554</span></div>
+				<div>
+				<p>News will also be offered here alongside Art.</p></div>
+			</div>
+			<div class="indexPost">
+				<div class="postHeading"><span id="spanRight">1622903714731</span></div>
+				<div>
+				<p>Ebooks; audiobooks; classical music; art; documentaries</p></div>
+			</div>
+			<div class="indexPost">
+				<div class="postHeading"><span id="spanRight">1622902269625</span></div>
+				<div>
+				<p>Masterful, modest, feast thou with the gods.</p></div>
+			</div>
 		</div>
 
 		<div class="partial top10_partial">
-			<h2><a href>Top 10 Torrents this Day</a></h2>
+			<h2><a href>Top 10 Titles this Day</a></h2>
 			<div class="collage" id="collage_day">
 				
 			</div>
 
-			<h2><a href>Top 10 Torrents this Week</a></h2>
+			<h2><a href>Top 10 Titles this Week</a></h2>
 			<div class="collage" id="collage_week">
 				
 			</div>
 
-			<h2><a href>Top 10 Torrents this Month</a></h2>
+			<h2><a href>Top 10 Titles this Month</a></h2>
 			<div class="collage" id="collage_month">
 				
 			</div>
 
-			<h2><a href>Top 10 Torrents this Year</a></h2>
+			<h2><a href>Top 10 Titles this Year</a></h2>
 			<div class="collage" id="collage_year">
 				
 			</div>
 
-			<h2><a href>Top 10 Torrents of All Time</a></h2>
+			<h2><a href>Top 10 Titles of All Time</a></h2>
 		    <div class="collage" id="collage_time">
 				
 			</div>
@@ -138,17 +163,20 @@
 
 		<div class="partial forums_partial">
 			<h2>Forums</h2>
-			
+			<div class="pagination">
+
+			</div>
 		</div>
 
 		<div class="partial forums_post_partial">
 			<h2>Post</h2>
 			<form class="forums_post" action="/forum_post" method="POST">
-				<input placeholder="tripcode (name#password)" name="tripcode"><br>
+				<input placeholder="tripcode" name="tripcode"><br>
 				<input id="threadTitle" placeholder="thread title" name="threadTitle">
 				<br>
 				<textarea class="forum_textarea" name='postBody' placeholder="post here"></textarea><br><br>
 				<button>Submit</button>
+				<div class="forums_post_div"></div>
 			</form>
 		</div>
 		
@@ -173,6 +201,8 @@
 			<div class="collage">
 
 			</div>
+
+			<div id="commentArea"></div>
 			
 		</div>
 
@@ -180,7 +210,7 @@
 			<h2>Edit doc</h2>
 			<form method="POST" class="edit_doc">
 				<input placeholder = "title" name="doc_name"><br>
-				<input name="doc_person" id="doc_person" placeholder="person"><button id="doc_add_person">add person</button><button id="doc_create_person">create person</button><br>
+				<input name="doc_person" id="doc_person" placeholder="person"><select id="docPersonImportance"><option value="author">Author</option><option value="Director">Director</option><option value="editor">Editor</option><option value="translator">Translator</option></select><input id="docPersonRole"><button id="doc_add_person">add person</button><button id="doc_create_person">create person</button><br>
 				<input placeholder="date" name="doc_date"><br>
 				<input placeholder="img url" name="doc_img"><br>
 				<input placeholder="tags (comma separated)" name="doc_tags"><br>
@@ -206,7 +236,7 @@
 			<table class="main_table">
 				<thead>
 					<tr>
-						<th>Name</th><th>Tags</th>
+						<th class="gaz_style"></th><th>Name</th><th>Tags</th><th>#</th><th>Time</th>
 					</tr>
 				</thead>
 				<tbody>
@@ -232,11 +262,72 @@
 		namically loaded with jquery. when a partial is called all .partial are hidden. a router is behind this !-->
 		<div class="partial titles_partial">
 			<br>
-		<h2><a href>Titles</a></h2>
+		<h2><a href>Torrents</a></h2>
+			<div class="basicSearch">
+				<span id="switchAdvancedSearch"><a href>Switch to Advanced Search</a></span>
+				<span id="switchBasicSearch"><a href>Switch to Basic Search</a></span><br>
+				<form>
+					<input name="terms" id="searchTerms" placeholder="terms"><br>
+					<input name="tags" id="searchTags" placeholder="tags (comma separated)">
+					<ul>
+						<li><label><input id="search_type_0" type="checkbox" name="types[0]" value="0">Nonfiction</label></li>
+						<li><label><input id="search_type_1" type="checkbox" name="types[1]" value="1">Fiction</label></li>
+						<li><label><input type="checkbox" id="search_type_2" name="types[2]" value="2">Classical Music</label></li>
+						<li><label><input type="checkbox" id="search_type_3" name="types[3]" value="3">Art</label></li>
+						<li><label><input type="checkbox" name="types[4]" id="search_type_4" value="4">Documentary</label></li>
+						<li><label><input type="checkbox" name="types[5]" id="search_type_5" value="5">News</label></li>						
+					</ul>
+					<div class="advancedSearch">
+						<input name="person" placeholder="person" id="advPerson"><br>
+						<input name="date" placeholder="date" id="advDate"><br>						
+						<select name="media" id="advMedia">
+							<option value="">Media</option>
+							<option value="ebook">ebook</option>
+							<option value="scan">ebook (scan)</option>											
+							<option value="img">img</option>
+							<option value="dvd">WEB</option>
+							<option value="dvd">DVD</option>
+							<option value="blu-ray">Blu-Ray</option>
+							<option value="cd">CD</option>
+							<option value="vinyl">Vinyl</option>				
+						</select>
+						<br>
+						<!--CONTAINER (MKV), FORMAT (PDF) !-->
+						<select name="format" id="advFormat">
+							<option value="">Format</option>
+							<option value="pdf">.pdf</option>
+							<option value="mp3">.mp3</option>
+							<option value="jpg">.jpg</option>
+							<option value="png">.png</option>
+							<option value="gif">.gif</option>
+							<option value="webm">.webm</option>
+							<option value="mkv">.mkv</option>
+							<option value="avi">.avi</option>
+						</select>
+						<br>
+						<!--BITRATE, RESOLUTION !-->
+						<select name="bitrate" id="advBitrate">
+							<option value="">Bitrate</option>
+							<option value="text">text</option>
+							<option value="graphic">graphic</option>				
+							<option value="variable">audio</option>
+							<option value="lossless">video</option>					
+						</select>
+						<br>							
+						<input id="advPublisher" placeholder="publisher or journal"><br>
+						<input id="advEdition" placeholder="edition, volume, editors"><br>
+						<input id="advNumber" placeholder="no., pub date"><br>
+						<input id="advPages" id="pages" placeholder="pages, article #"><br>
+					</div>
+					<br>					
+					<input type="submit" style="display: none" />
+					<input id="inputButton" type="submit" value="Search">
+				</form>
+			</div>
 			<table class="main_table">
 				<thead>
 					<tr>
-						<th class="gaz_style"></th><th>Name / Year / Persons</th><th>Time</th><th>Size</th><th>Snatches</th>
+						<th class="gaz_style"></th><th><a href id='sortName'>Name</a> / <a href id='sortDate'>Year</a> / Persons</th><th><a href id='sortTime'>Time</a></th><th><a href id='sortSize'>Size</a></th><th><a href id='sortSnatches'>Snatches</a></th>
 					</tr>
 				</thead>
 				<tbody>
@@ -258,33 +349,53 @@
 			<!--FORMERLY, MUSIC, Ebooks, etc !-->
 			<select name="type">
 				<option value="nonfiction">Nonfiction</option>
-				<option value="fiction">Fiction</option>
-				<option value="periodical">Periodical</option>
+				<option value="fiction">Fiction</option>				
 				<option value="music">Classical Music</option>
-				<option value="meme">Art</option>
+				<option value="art">Art</option>
+				<option value="documentary">Documentary</option>
+				<option value="news">News</option>
+			</select>
+			<br>
+			<!-- this would be like, ALBUM, SINGLE, etc. !-->
+			<select name="release"> 
+				<option value="book">Book</option>
+				<option value="audiobook">Audiobook</option>				
+				<option value="lecture">Lecture</option>
+				<option value="img">Image</option>
+				<option value="periodical">Periodical</option>
+				<option value="textbook">Textbook</option>
+				<option value="encyclopedia">Encyclopedia</option>
+				<option value="news">News</option>
+				<option value="single">Single</option>
+				<option value="album">Album</option>
+				<option value="anthology">Anthology</option>
+				<option value="film">Feature Film</option>
 			</select>
 			<br>
 			<input name="name" placeholder="title">
 			<br>
 			<input name="date" placeholder="date"><br>
 			<input name="img" placeholder="img url"><br>
-			<input id="upload_person" name="person" placeholder="person"><button class="add_person">add person</button><button class="create_person">create person</button>
+			<input id="upload_person" name="person" placeholder="person"><select id="personImportance"><option value="author">Author</option><option value="Director">Director</option><option value="editor">Editor</option><option value="translator">Translator</option></select><input id="personRole" placeholder="role"><button class="add_person">add person</button><button class="create_person">create person</button>
 			<br>
-			<br>
-			<!--MEDIA (EBOOK, AUDIOBOOK, NEWS ARTICLE), CODEC (x264, xvid) !-->
+			<br>			
+			
+			<!--MEDIA SOURCE (EBOOK, AUDIOBOOK, NEWS ARTICLE) !-->
 			<select name="media">
-				<option value="ebook">Ebook</option>
-				<option value="audiobook">Audiobook</option>
-				<option value="article">Article</option>	
-				<option value="textbook">Textbook</option>			
-				<option value="news">News</option>
-				<option value="lecture">Lecture</option>
-				<option value="image">Digital Image</option>
-				<option value="art">Painting, art</option>
-				<option value="documentary">Documentary (xvid, x264)</option>
-				<option value="short">Short Video</option>
-				<option value="album">Album</option>
-				<option value="single">Single</option>				
+				<option value="ebook">ebook</option>
+				<option value="scan">ebook (scan)</option>											
+				<option value="img">img</option>
+				<option value="dvd">WEB</option>
+				<option value="dvd">DVD</option>
+				<option value="blu-ray">Blu-Ray</option>
+				<option value="cd">CD</option>
+				<option value="vinyl">Vinyl</option>				
+			</select>
+			<br>
+			<!--CODEC IF APPLICABLE !-->
+			<select name="codec">
+				<option value="">Codec</option>
+				<option value="x264">x264</option>				
 			</select>
 			<br>
 			<!--CONTAINER (MKV), FORMAT (PDF) !-->
@@ -292,6 +403,7 @@
 				<option value="pdf">.pdf</option>
 				<option value="mp3">.mp3</option>
 				<option value="jpg">.jpg</option>
+				<option value="jpeg">.jpeg</option>
 				<option value="png">.png</option>
 				<option value="gif">.gif</option>
 				<option value="webm">.webm</option>
@@ -302,16 +414,15 @@
 			<!--BITRATE, RESOLUTION !-->
 			<select id="select_bitrate" name="bitrate">
 				<option value="text">text</option>
-				<option value="sd-img">sd image</option>
-				<option value="hd-img">hd image</option>
-				<option value="variable">variable mp3</option>
-				<option value="lossless">lossless</option>				
-				<option value='480p SD'>sd video</option>
-				<option value='1080p HD'>x264 HD</option>				
+				<option value="graphic">graphic</option>				
+				<option value="variable">audio</option>
+				<option value="lossless">video</option>		
 			</select>
 			<br>	
 			<input name="publisher" placeholder="publisher or journal"><br>
-			<input name="edition" placeholder="edition, volume, editors"><input name="number" placeholder="no., pub date"><br><input name="pages" placeholder="pages, article #"><br>
+			<input name="edition" placeholder="edition, volume, editors"><br>
+			<input name="number" placeholder="no., pub date"><br>
+			<input name="pages" placeholder="pages, article #"><br>
 			<!-- location is included so that APA format can be generated in the future !-->
 			<input name="location" placeholder="location">
 			<br><br>
@@ -323,11 +434,15 @@
 			<input type="submit" value="Submit">
 		</form>
 		</div>
-		</div>
-		<br>
 		<script>
 
 			$(document).ready(function(){
+
+				$(".index_partial .postHeading").each(function(index){
+					var mil = $(this).text()
+					$(this).find("#spanRight").text(timeSince(mil));
+				})
+
 				$(".heading a").click(function(e){
 					e.preventDefault();
 				})
@@ -345,6 +460,84 @@
 		      var $uploadSpeed = document.querySelector('#uploadSpeed')
 		      var $downloadSpeed = document.querySelector('#downloadSpeed')
 
+		      function getBrowseStr(){
+		      	const urlParams = new URLSearchParams(window.location.search);
+		      	var browseStr = "?search=" + urlParams.get('search') + "&page=" + urlParams.get('currentPage') + "&taglist="+urlParams.get('taglist') +"&tags="+urlParams.get('tags')+"&terms="+urlParams.get('terms')+"&types="+ urlParams.get('types') +"&publisher="+urlParams.get('publisher')+"&date="+urlParams.get('date')+"&format="+urlParams.get('format')+"&person="+urlParams.get('person') + "&bitrate="+urlParams.get('bitrate')+"&media="+urlParams.get('media')+"&edition="+urlParams.get('edition')+"&number="+urlParams.get('number')+"&pages="+urlParams.get('pages') + "&action=" + urlParams.get('action')
+		      	return browseStr;
+		      }
+
+
+		      function switchOrder(order){
+		      	if(order === "asc"){
+		      		return "desc"
+		      	}
+		      	else if(order === "desc"){
+		      		return "asc"
+		      	}	
+		      }
+
+		      var sortName = "asc"
+
+		       $("#sortName").click(function(e){
+		       	e.preventDefault()
+		       	sortName = switchOrder(sortName);
+		      	//$.get("/browse" + getBrowseStr() + "&sort_by=name&order_by=" + sortName, function(data){
+					var URL = updateURLParameter((window.location.pathname + window.location.search), "sort_by", "name")
+					URL = updateURLParameter(URL, "order_by", sortName)
+					route(URL)
+		      	//})		      			      	
+		      })
+
+		       $("#sortName").attr("href", "")
+
+		      var sortSnatches = "asc"
+		      $("#sortSnatches").click(function(e){
+		       	e.preventDefault()
+
+		      	sortSnatches = switchOrder(sortSnatches);
+		      	//$.get("/browse" + getBrowseStr() + "&sort_by=snatched&order_by=" + sortSnatches, function(data){
+					var URL = updateURLParameter((window.location.pathname + window.location.search), "sort_by", "snatched")
+					URL = updateURLParameter(URL, "order_by", sortSnatches)
+					route(URL)
+		      	//})		      			      	
+		      })
+
+		      var sortDate = "asc"
+		      $("#sortDate").click(function(e){
+		       	e.preventDefault()
+
+		      	sortDate = switchOrder(sortDate);
+		      //	$.get("/browse" + getBrowseStr() + "&sort_by=date&order_by=" + sortDate, function(data){
+					var URL = updateURLParameter((window.location.pathname + window.location.search), "sort_by", "date")
+					URL = updateURLParameter(URL, "order_by", sortDate)
+					route(URL)
+		      	//})		      			      	
+		      })
+
+		      var sortTime = "asc"
+
+		      $("#sortTime").click(function(e){
+		       	e.preventDefault()
+
+		      	sortTime = switchOrder(sortTime)
+		      	//$.get("/browse" + getBrowseStr() + "&sort_by=time&order_by=" + sortTime, function(data){
+					var URL = updateURLParameter((window.location.pathname + window.location.search), "sort_by", "time")
+					URL = updateURLParameter(URL, "order_by", sortTime)
+					route(URL)
+		      //	})		      			      	
+		      })
+
+		      var sortSize = "asc"
+		      $("#sortSize").click(function(e){
+		       	e.preventDefault()
+
+		      	sortSize = switchOrder(sortSize);
+		      //	$.get("/browse" + getBrowseStr() + "&sort_by=size&order_by=" + switchOrder(sortSize), function(data){
+					var URL = updateURLParameter((window.location.pathname + window.location.search), "sort_by", "size")
+					URL = updateURLParameter(URL, "order_by", sortSize)
+					route(URL)
+		      //	})		      			      	
+		      })
 			
 				$(".edit").click(function(e){
 					e.preventDefault();
@@ -362,7 +555,7 @@
 				$(".torrents_route").click(function(e){
 					e.preventDefault();
 					currentPage = 1;
-					route("/titles")
+					route("/torrents")
 				})
 
 				$(".upload_route").click(function(e){
@@ -384,7 +577,7 @@
 				$(".classes_route").click(function(e){
 					e.preventDefault();
 					currentPage = 1;
-					route("/classes")
+					route("/class")
 				})
 
 				$(".add_class").click(function(e){
@@ -405,7 +598,7 @@
 					var query = path.split("?")
 					console.log("QUERY: " + query[1])
 					var pathway = query[0].split("/");
-					router(pathway[1], query[1], {id : pathway[3], collection : pathway[2]})			
+					router(pathway[1], query[1], {id : pathway[2], collection : pathway[1]})			
 				}
 
 				var path = window.location.pathname + window.location.search;
@@ -420,7 +613,8 @@
 						var pathway = query[0].split("/");	
 						$(".partial").hide();
 					//	console.log("HERE IS THE ROUTING PATHWAY : " + pathway)
-						router(pathway[1], query[1], {id : pathway[3], collection : pathway[2]});		
+
+						router(pathway[1], query[1], {id : pathway[2], collection : pathway[1]});		
 					}
 									
 				})
@@ -436,14 +630,38 @@
 					const page = urlParams.get('page');
 					const view = urlParams.get('view');
 					const doc = urlParams.get('doc');
-					console.log(page);
+					const terms = urlParams.get('terms');
+
+					const tags = urlParams.get('tags');
+					const types = urlParams.get("types");
+					const search = urlParams.get("search")
+
+					const publisher= urlParams.get('publisher');
+					const date = urlParams.get('date');
+					const format = urlParams.get('format');
+					const person = urlParams.get('person')
+
+					const action = urlParams.get("action");
+
+					const bitrate = urlParams.get('bitrate');
+					const media = urlParams.get("media");
+					const edition = urlParams.get("edition");
+					const number = urlParams.get("number");
+					const pages = urlParams.get("pages");
+
+					const sort_by = urlParams.get("sort_by");
+					const order_by = urlParams.get("order_by");
+
+					const torrent_details = urlParams.get("torrent_details");
+					console.log(id);
 					switch(route){ 
 						case "index":
 							load_index();
 							break;
-						case "titles":
+						case "torrents":
 							if(page) currentPage = page;
-							load_torrents(taglist);
+							load_torrents(sort_by, order_by, taglist, terms, tags, types, search, publisher, date, format, person, bitrate, media, edition, number, pages, action);
+							load_basic_search(action);
 							paginate();
 							break;
 						case "upload":
@@ -452,14 +670,20 @@
 						case "forums_post":
 							load_forums_post(view, doc);
 							break;
-						case "classes" :
+						case "class" :
 							if(page) currentPage = page;						
 							load_classes();
 							paginate();
 							break;
-						case "gazelle":					
-							load_gazelle(col, id);							
-							break;				
+						case "titles":												
+							load_doc("titles", id, torrent_details);							
+							break;
+						case "classes":					
+							load_doc("classes", id, null);							
+							break;	
+						case "persons":					
+							load_doc("persons", id, null);							
+							break;			
 						case "add_class" : 
 							load_add_class();
 							break;
@@ -472,12 +696,17 @@
 						case "forums":
 							if(page) currentPage = page
 							load_forums(view, doc);
+							//paginate();
 							break;
 						default:
 							load_index();
 							break;
 					}		
 				}
+
+				var forumSections = [ {
+					name : "Bugs", group : 1 }, { name: "Suggestions", group : 1 }, {name : "Site Discussion", group : 1 }, { name :"General Chat", group : 2 }, { name :"BitTorrent", group : 2}, {name :"The Library", group: 2 },{name :"Classical Music", group: 2}
+				]
 
 				function load_forums(view, doc){
 					//show 1st thread
@@ -486,33 +715,49 @@
 					//"?view=section&doc=17"
 					$(".forums_partial").empty();
 					if(!view){
+						//put your forum section groups here, for example Bugs forum section is grouped under SolomonsHouse
 						var h31 = document.createElement('h3');
-						$(h31).text("SolomonsHouse")
+						$(h31).text("FrogHouse")
 						var h32 = document.createElement('h3');
 						$(h32).text("General Discussion")				
 						
 						var table1 = document.createElement('table');
 						$(table1).addClass("main_table");
+						$(table1).attr('id', "table_1")
 
 						var table2 = document.createElement("table");
 						$(table2).addClass("main_table")
+						$(table2).attr('id', "table_2")
 
 						$(".forums_partial").append(h31)
 						$(".forums_partial").append(table1);
 						$(".forums_partial").append("<br>")
 						$(".forums_partial").append(h32)
 						$(".forums_partial").append(table2);
-						$(".main_table").append("<tr><th></th><th>Section</th>")
+						$(".main_table").append("<tr><th class='gaz_style'></th><th class='section_td'>Section</th><th class='last_post_td'>Last post</th>")
 						
-						//table1: SolomonsHouse related forum sections
+						//table1: FrogHouse related forum sections
 						//table2: General Discussion
-						createTR(table1, "Bugs")
-						createTR(table1, "Suggestions")
-						createTR(table1, "Site Discussion")
-						
-						createTR(table2, "General Chat")
-						createTR(table2, "BitTorrent")
-						createTR(table2, "The Library")
+						$.get("/forum", function(data){
+							console.log(data);
+							var sectionsLastPost = [];
+							data.result.forEach(function(post){
+								//this belongs to section 3 even though it's lsited first (wat)
+								if(!sectionsLastPost.includes(post.section)){
+									console.log(post);
+									//forumSections[post.section].post = post;
+									console.log(post.section);
+									createTR(post.section, post)
+									sectionsLastPost.push(post.section);
+								}
+							})
+							//loop through each when you get to one of that section it is the most recent
+							/*for(var i = 0; i < forumSections.length; i++){
+								if(sectionsLastPost[i]){
+									createTR(sectionsLastPost[i].section, sectionsLastPost[i]);
+								}
+							}*/
+						})
 						
 						//get all sections
 
@@ -522,6 +767,17 @@
 						//this is for example The Library, listing all forum threads with docID 4
 						$(".forums_partial .main_table").remove();
 						$.get("/forum?view="+view+"&doc="+doc+"&page="+currentPage, function(data){
+
+							var aaa = document.createElement("a");
+							$(aaa).text("Forums");
+							$(aaa).attr("href", "/forums")
+							$(aaa).click(function(e){
+								e.preventDefault();
+								route("/forums")
+							})
+
+							$(".forums_partial").append(aaa);
+							$(".forums_partial").append("<br>");
 							var button = document.createElement("button");
 							$(button).text("Make a thread");
 							$(".forums_partial").append(button);
@@ -532,12 +788,21 @@
 								route("/forums_post?view="+view +"&doc="+doc);
 							})
 
+
 							var table = document.createElement('table');
 							$(table).addClass("main_table");
-							$(table).append("<tr><th></th><th>Thread</th><th></tr>")
-
+							$(table).append("<tr><th class='gaz_style'></th><th>Latest</th><th id='replies'>Replies</th></tr>")
+							$(".forums_partial").append("<br>")
+							$(".forums_partial").append("<br>")
 							$(".forums_partial").append(table);
+							$(".forums_partial").append("<br>")
 							
+
+							var pag = document.createElement('div');
+							$(pag).addClass("pagination");
+							$(".forums_partial").append(pag)
+							paginate();
+
 							console.log(data);
 
 							//this is a list of threads
@@ -564,9 +829,35 @@
 							$(thread).addClass("thread");
 
 							$(".forums_partial").append(thread);
+
+							var pag = document.createElement('div');
+							$(pag).addClass("pagination");
+							$(".forums_partial").append(pag)
+							paginate();
 														
 							var e = document.createElement("span")
+							console.log(data.result[0]);
 							$(e).text(data.result[0].threadTitle)
+							var aa= document.createElement('a');
+							$(aa).text(forumSections[data.result[0].section].name)
+							$(aa).attr("href", "/forums?view=section&doc="+data.result[0].section)
+							$(aa).click(function(e){
+								e.preventDefault();
+								route("/forums?view=section&doc="+data.result[0].section)
+							})
+
+							var aaa = document.createElement("a");
+							$(aaa).text("Forums");
+							$(aaa).attr("href", "/forums")
+							$(aaa).click(function(e){
+								e.preventDefault();
+								route("/forums")
+							})
+
+							$(".thread").append(aaa);
+							$(".thread").append(" > ");
+							$(".thread").append(aa);
+							$(".thread").append(" > ");
 							$(".thread").append(e)
 
 							data.result.forEach(function(post){
@@ -588,23 +879,43 @@
 				function listThreadPost(thread, post){
 					var heading= document.createElement('div');
 					var forumPost = document.createElement('div')
-					$(thread).append("<br>")
-					$(thread).append("<br>")
+					
 					$(forumPost).addClass("post")
 					$(thread).append(forumPost);
 					//this recalls Thomas Pynchon's, The Crying of Lot 49
 					$(heading).addClass('postHeading')
 					$(forumPost).append(heading);
 					var div = document.createElement('div');
-					$(div).addClass("post")
+				//magick style	$(div).addClass("post")
+					var id = document.createElement('a');
+					$(id).text(post._id);
+					$(id).attr("href", "#");
+					$(id).attr("id", "post_" + post._id)
+
 					var tripSpan = document.createElement("span");
 					var body = document.createElement("p");
-					$(tripSpan).text(post.trip);
+					$(tripSpan).text(post.trip + " " + timeSince(Date.parse(post.date)));
 					$(tripSpan).addClass("tripSpan");
-					$(heading).append("<br>")
+					$(heading).append("<br>");
+					heading.append(id);
 					$(heading).append(tripSpan);
-					$(div).append("<br>");
-					$(body).text(decodeHtml(post.postBody));
+					
+					
+					var splitted = decodeHtml(post.postBody).split("\n");
+					splitted.forEach(function(line){
+						var e = document.createElement('p');
+					  $(body).append(e);
+					  $(e).text(line)
+											
+					  if(line.indexOf(">")==0){
+					    //$(this).text($(this).text().substring(1))
+					    $(e).addClass("quote")
+					  }
+
+					  if(line.indexOf(">>" > -1)){
+
+					  }
+					}) 
 					$(div).append(body);
 					$(forumPost).append(div);
 				}
@@ -617,7 +928,7 @@
 					$(".forums_partial .main_table").append(tr)
 					var td1 = document.createElement('td1');
 					
-					
+					$(td0).addClass("gaz_style")
 					var a = document.createElement('a');
 					//workaround
 					if(post.threadTitle){
@@ -626,91 +937,257 @@
 					else{
 						$(a).text("Untitled");
 					}
+
+					var pageSpan = document.createElement('span');
+					var a1 = document.createElement('a');
+					var a2 = document.createElement("a")
+					var a3 = document.createElement('a');
+					var a4 = document.createElement('a');
+
+					const PAGE_LIMIT = 27;
+
+
+					var lastPage = Math.round(parseInt(post.postCount) / PAGE_LIMIT)
+					if(lastPage >= 2){
+						$(pageSpan).append(" (")
+						$(pageSpan).append(a1);
+						$(pageSpan).append(" ")
+						$(a1).text("1")
+						$(a1).attr("href", "/forums?view=thread&doc=" +post.threadID + "&page=1")
+						$(a1).click(function(e){
+							e.preventDefault();
+							route("/forums?view=thread&doc=" +post.threadID + "&page=1")
+						})
+						$(pageSpan).append(a2);
+
+						$(a2).text("2")
+						$(a2).attr("href", "/forums?view=thread&doc=" + post.threadID + "&page=2")
+						$(a2).click(function(e){
+							e.preventDefault();
+							route("/forums?view=thread&doc=" +post.threadID + "&page=2")
+						})
+
+						if(lastPage ===2){
+							$(pageSpan).append(")")
+						}
+
+						if(lastPage === 3){
+							$(pageSpan).append(" ")
+							$(pageSpan).append(a4);
+							$(pageSpan).append(")")
+						}
+
+						if(lastPage >= 4){
+							$(pageSpan).append(" - ");
+							$(pageSpan).append(a3);
+							$(pageSpan).append(" ");
+							$(pageSpan).append(a4);
+							$(pageSpan).append(")")
+						}						
+
+						$(a3).text(lastPage - 1)
+						$(a3).attr("href", "/forums?view=thread&doc="+post.threadID + "&page=" + (lastPage -1))
+						$(a3).click(function(e){
+							e.preventDefaulT();
+							route("/forums?view=thread&doc="+post.threadID + "&page="+ (lastPage - 1))
+						})
+						$(a4).text(lastPage)
+						$(a4).attr("href", "/forums?view=thread&doc="+post.threadID + "&page=" + lastPage)
+						$(a4).click(function(e){
+							e.preventDefaulT();
+							route("/forums?view=thread&doc="+post.threadID + "&page="+ lastPage)
+						})
+						
+					}
+					
+
+					var span = document.createElement("span");
+					$(span).attr("id", "spanRight");
+					$(span).text("by " + post.recentTrip + " " + timeSince(Date.parse(post.recentDate)))
 					$(a).attr("href", "/forums?view=thread&doc="+post.threadID)
 					$(td1).append(a);
+					$(td1).append(pageSpan)
+					$(td1).append(span);
+					var td2 = document.createElement("td");
+					$(td2).append(post.postCount)
+					$(td2).css("width", 77)
+
 					$(a).click(function(e){
 						e.preventDefault();
 						route("/forums?view=thread&doc="+post.threadID);
 					})
-					
-		
-
 					$(tr).append(td1);
+					$(tr).append(td2);
 
 				}
 
 
 				//TODO: list doc #s in monogdb			
-				function createTR(table, section){
-					var docID = 0;
-					switch(section){
-						case "Bugs":
-							docID = 0;
-							break;
-						case "Suggestions":
-							docID = 1;
-							break;
-						case "General Chat":
-							docID = 2;
-							break;
-						case "BitTorrent":
-							docID = 3;
-							break;
-						case "The Library":
-							docID = 4;
-							break;
-						case "Site Discussion":
-							docID = 5;
-							break;
-						case "default":
-							docID = 2; 
-							break;
-					}
+				function createTR(section, post){								
 
 					var tr = document.createElement('tr');
 					var td1 = document.createElement('td');
 					//spacing
 					$(tr).append(td1);
+					$(td1).addClass("gaz_style")
 					var td2 = document.createElement('td')
 					var a = document.createElement('a');
-					$(a).attr("href", "/forums?view=section&doc="+docID)
+					$(a).attr("href", "/forums?view=section&doc="+section)
 					$(a).click(function(e){
 						e.preventDefault();
-						route("/forums?view=section&doc="+docID)
+						route("/forums?view=section&doc="+section)
 					})
 					$(td2).append(a)
+					var td3 = document.createElement('td');
+					if(post){
+						var span2 = document.createElement("span");
+						$(span2).attr("id", "spanLeft");
+
+						$(td3).append(span2);
+						var a2 = document.createElement('a');
+						$(a2).text(decodeHtml(post.threadTitle));
+						$(a2).attr("href", "/forums?view=thread&doc="+post.threadID);
+						$(a2).click(function(e){
+							e.preventDefault();
+							route("/forums?view=thread&doc="+post.threadID);
+						})
+						$(span2).append(a2);
+						
+						$(td3).append("<span id='spanRight'>by "+ post.trip + " " + timeSince(Date.parse(post.date)) + "</span>");
+					}
 					$(tr).append(td2);
-					$(a).text(section);
-					$(table).append(tr);
+					$(tr).append(td3);
+					
+					console.log(section);
+					console.log(forumSections[section]);
+					var forum = forumSections[section]
+
+					if(forum){
+						$(a).text(forum.name);
+						$("#table_"+ forum.group).append(tr);
+					}
 				}
 
 				function load_forums_post(view, doc){
+					$(".forums_post_div").empty();
 					$(".forums_post_partial").show();
 					$('<input />').attr('type', 'hidden')				  
 				        .attr('name', "view")
 				        .val(view)
-				        .appendTo('.forums_post');
+				        .appendTo('.forums_post_div');
 				    $('<input />').attr('type', 'hidden')				  
-				        .attr('name', "doc")
+				        .attr('name', "section")
 				        .val(doc)
-				        .appendTo('.forums_post');	
+				        .appendTo('.forums_post_div');	
 
 				    if(view === "section"){
 				    	$("#threadTitle").show();
+				    	$('<input />').attr('type', 'hidden')				  
+					        .attr('name', "thread")
+					        .val('t')
+					        .appendTo('.forums_post_div');
 				    }
 				    else if(view === "thread"){				   
 				    	$('<input />').attr('type', 'hidden')				  
 					        .attr('name', "threadID")
 					        .val(doc)
-					        .appendTo('.forums_post');
+					        .appendTo('.forums_post_div');
+					    $('<input />').attr('type', 'hidden')				  
+					        .attr('name', "thread")
+					        .val('')
+					        .appendTo('.forums_post_div');
+					    $('<input />').attr('type', 'hidden')				  
+					        .attr('name', "section")
+					        .attr('id', 'section')					
+					        .appendTo('.forums_post_div');
 					    $("#threadTitle").hide();
-					    $("#threadTitle").val("");	
+					    $.get('/load_forums_posting?doc='+doc, function(data){
+					    	console.log(data);
+					    	$("#threadTitle").val(data.result.threadTitle);
+					    	$("section").val(data.result.section)
+					    })
+					   
 				    }	
 				}
 
-				function load_collage(){
+				function load_basic_search(action){
+					if(action === "basic" || !action){
+						$("#switchBasicSearch").hide();
+						$("#switchAdvancedSearch").show();
+						$(".advancedSearch").hide();
+						console.log("height should be 300");
+						$(".basicSearch").height(300)
+					}
+					else if(action==="advanced"){
+						$("#switchAdvancedSearch").hide();
+						$("#switchBasicSearch").show();
+						$(".advancedSearch").show();
+						console.log("Should load advanced search")
+						$(".basicSearch").height(555)
+					}
 
+					$(".basicSearch").submit(function(e){
+						e.preventDefault();
+						console.log("submit");
+						//$("#inputButton").click();
+					})
+
+					//this is here to take action
+					$("#inputButton").click(function(e){
+						e.preventDefault();
+						//#searchTags searchTerms
+						//#search_type_1
+						var terms = $("#searchTerms").val();
+						var tags = $("#searchTags").val();
+						var publisher = $(".basicSearch #advPublisher").val();
+						var date = $("#advDate").val();
+						var person = $("#advPerson").val();
+						var format = $("#advFormat").val();
+						var edition = $("#advEdition").val();
+						var number = $("#advNumber").val();
+						var pages = $("#advPages").val()
+						var media = $("#advMedia").val();
+						var bitrate = $("#advBitrate").val();
+						var types = [];
+						//'5' must be edited when types are added or removed
+						for(var i= 0; i < 5; i++){
+							if($("#search_type_" +i).is(":checked")){
+								types.push($("#search_type_" + i).val())
+							}
+						}
+						types = encodeURIComponent(JSON.stringify(types));
+
+						console.log(pages);
+						route("/torrents?types="+types+"&tags="+tags+"&terms="+terms+"&search=true&date="+date+"&publisher="+publisher + "&person="+person+"&format="+format +"&media="+media+"&bitrate="+bitrate+"&edition="+edition + "&number="+number +"&pages="+pages+"&action="+action);
+
+					})
 				}
+
+				$("#switchBasicSearch").click(function(e){
+					e.preventDefault();	
+					$("#switchBasicSearch").hide();
+					$("#switchAdvancedSearch").show();
+					$(".advancedSearch").hide();
+					$(".basicSearch").height(300)
+					console.log("routing to basic search");				
+					var URL = updateURLParameter((window.location.pathname + window.location.search), "action", "basic")
+					route(URL)
+				})
+
+				$("#switchAdvancedSearch").click(function(e){
+					e.preventDefault();		
+					$("#switchAdvancedSearch").hide();
+					$("#switchBasicSearch").show();
+					$(".advancedSearch").show();
+					$(".basicSearch").height(555)
+					console.log('routing to advanced search')			
+					var URL = updateURLParameter((window.location.pathname + window.location.search), "action", "advanced")
+					route(URL)
+				})
+
+
+
+				
 
 				function load_edit_doc(collection, id){
 					$(".edit_doc_partial").show();
@@ -750,13 +1227,17 @@
 						console.log(data);
 						
 						var dayCount = 0;
-						data.day.forEach(function(title){							
-							make10Collage("day", title, dayCount);
-							dayCount++;
-						})
+						if(data.day && data.day.length > 0){
+							data.day.forEach(function(title){							
+								make10Collage("day", title, dayCount);
+								dayCount++;
+							})	
+						}
+						
 						
 						var weekCount = 0;
-						data.week.forEach(function(title){							
+						data.week.forEach(function(title){		
+							console.log(weekCount);					
 							make10Collage("week", title, weekCount);
 							weekCount++;
 
@@ -783,7 +1264,9 @@
 							timeCount++;	
 						})
 						//show partial after server query
+					$(".collage").show();
 					$(".top10_partial").show();
+
 						
 
 					})
@@ -797,11 +1280,11 @@
 					var titleSpan = document.createElement("span");
 					var tagSpan = document.createElement("span");
 
-					$(a).attr('href', "/gazelle/titles/" + title._id);
+					$(a).attr('href', "/titles/" + title._id);
 
 					$(a).click(function(e){
 						e.preventDefault();								
-						route("/gazelle/titles/"+title._id)
+						route("/titles/"+title._id)
 					})
 
 					var imgURL = "https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/PDF_file_icon.svg/833px-PDF_file_icon.svg.png";
@@ -815,12 +1298,12 @@
 
 					var title_span_a = document.createElement('a');
 					$(title_span_a).text(decodeHtml(title.name).toProperCase())
-					$(title_span_a).attr("href", "/gazelle/titles/"+title._id);
+					$(title_span_a).attr("href", "/titles/"+title._id);
 					$(titleSpan).append(title_span_a);
 
 					$(title_span_a).click(function(e){
 						e.preventDefault();
-						route("/gazelle/titles/"+title._id);
+						route("/titles/"+title._id);
 					})
 
 					$(titleSpan).addClass("collageSpan");
@@ -830,6 +1313,11 @@
 					var collageDiv = document.createElement('div');
 					$(collageDiv).addClass("collageDiv");
 
+					var date_span = document.createElement('span');
+
+					if(title.date){
+						$(date_span).text(" [" + title.date + "] ")
+					}
 
 
 					var personSpan = document.createElement("span");
@@ -843,11 +1331,11 @@
 						if(personCounter < title.persons.length - 1){
 							$(personSpan).append(", ")
 						}
-						$(person_span_a).attr('href', "/gazelle/persons/" + person._id)
+						$(person_span_a).attr('href', "/persons/" + person._id)
 
 						$(person_span_a).click(function(e){
 							e.preventDefault();
-							route("/gazelle/persons/" + person._id)
+							route("/persons/" + person._id)
 						})
 						personCounter++;
 					})
@@ -857,7 +1345,7 @@
 						var tag_span_a = document.createElement('a')
 						$(tag_span_a).text(tag)
 						$(tagSpan).append(tag_span_a)
-						$(tag_span_a).attr("href", "/titles")
+						$(tag_span_a).attr("href", "/torrents?taglist="+tag)
 
 						if(tagCounter !== title.tags.length - 1){
 							$(tagSpan).append(", ")
@@ -865,7 +1353,7 @@
 
 						$(tag_span_a).click(function(e){
 							e.preventDefault();
-							route("/titles?taglist="+tag)
+							route("/torrents?taglist="+tag)
 						})
 						tagCounter++;
 					})
@@ -874,6 +1362,7 @@
 					$(div).append("<br>")
 					$(div).append(collageDiv);
 					$(collageDiv).append(titleSpan)
+					$(collageDiv).append(date_span);
 					if(title.persons.length > 0){
 						$(collageDiv).append(" by ");
 						$(collageDiv).append(personSpan);
@@ -912,9 +1401,10 @@
 
 				}
 
-				function load_gazelle(collection, id){
+				//torrent_details is an infoHash.
+				function load_doc(collection, id, torrent_details){
 					//this loads classes, titles, and persons. torrents are embedded documents within titles.
-					
+					console.log(collection, id);
 					$.get("/doc/" + id + "?collection=" + collection, function(data){
 						var doc = data.doc;
 						console.log(data);
@@ -925,12 +1415,13 @@
 						$(".main_table").show();
 						if(collection === "titles"){
 							$(".gazelle_partial img").attr("src", "https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/PDF_file_icon.svg/833px-PDF_file_icon.svg.png");
+							$(".gazelle_partial").append("")//comment system
 						}
 						
 						
 						$(".gazelle_partial h3").empty();
 						$(".main_table tbody").empty();
-						$(".gazelle_partial h2").text(unescapeHtml(doc.name).toProperCase())
+						$(".gazelle_partial h2").text(decodeHtml(doc.name).toProperCase())
 						var personsCount = 0;
 						if(doc.persons){
 
@@ -942,12 +1433,12 @@
 								}
 
 								//TODO this way people can copy links
-								$("#subhead_person_" + person._id).attr("href", "/gazelle/persons/" + person._id)
+								$("#subhead_person_" + person._id).attr("href", "/persons/" + person._id)
 
 								$("#subhead_person_" + person._id).on('click', function(e){
 									e.preventDefault();
 									console.log("HERE")
-									route("/gazelle/persons/" + person._id)
+									route("/persons/" + person._id)
 									
 								})
 							})							
@@ -958,38 +1449,39 @@
 							$(".gaz_img").attr("src", "http://www.pngmart.com/files/5/Anonymous-PNG-Image.png")
 						}
 						else if(collection==="classes"){
-
+							//this is the gazelle class page, ie it lists members of a class 
 							$(".main_table").hide();
 							$(".collage").empty();
 							$(".collage").show();
 							$(".gaz_img").attr('src', "");
 
-							if(doc.titles){
+							if(doc.titleList){
 								var count = true;
 								//optionally duplicate torrent data in classes so that the $get is unnecessary
 								var counter = 0;
-								doc.titles.forEach(function(titleID){
+								//so this is the class list of titles
+								doc.titleList.forEach(function(title){
 								//get title img
 
-									$.get("/doc/" + titleID + "?collection=titles", function(data){
+									//$.get("/doc/" + titleID + "?collection=titles", function(data){
 										//if(data){
 											var div = document.createElement('div');
 											var a = document.createElement('a');
-											$(a).attr("href", "/gazelle/titles/" + titleID)
-											$(a).attr("id", "class_title_" + titleID)									
+											$(a).attr("href", "/titles/" + title._id)
+											$(a).attr("id", "class_title_" + title._id)									
 											var img = document.createElement('img');
 											//$(img).attr('src', unescapeHtml(data.doc.img));
 											
 											
-											if(!data.doc.img){
+											if(!title.img){
 												$(img).attr('src', "https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/PDF_file_icon.svg/833px-PDF_file_icon.svg.png");
 											}
 											else{
-												$(img).attr('src', unescapeHtml(data.doc.img))
+												$(img).attr('src', unescapeHtml(title.img))
 											}
 											if(count){
-												if(data.doc.img){
-													$(".gaz_img").attr('src', unescapeHtml(data.doc.img))
+												if(title.img){
+													$(".gaz_img").attr('src', unescapeHtml(title.img))
 
 												}
 												else{
@@ -999,12 +1491,12 @@
 											a.append(img);
 											var titleSpan = document.createElement("span");
 											var title_span_a = document.createElement("a");
-											$(title_span_a).attr("href", "/gazelle/titles/"+data.doc._id);
+											$(title_span_a).attr("href", "/titles/"+title._id);
 											var tagSpan = document.createElement("span");
 											
 											$(titleSpan).addClass("collageSpan")
 											$(tagSpan).addClass("collageSpan")
-											$(title_span_a).text(decodeHtml(data.doc.name).toProperCase())
+											$(title_span_a).text(decodeHtml(title.name).toProperCase())
 
 											$(titleSpan).append(title_span_a);
 
@@ -1012,36 +1504,39 @@
 											$(personSpan).addClass("collageSpan");
 
 											var personCounter = 0;
-											data.doc.persons.forEach(function(person){
+											title.persons.forEach(function(person){
 												var person_span_a = document.createElement('a');
 												$(person_span_a).text(decodeHtml(person.name).toProperCase());
 												$(personSpan).append(person_span_a);
-												if(personCounter < data.doc.persons.length - 1){
+												if(personCounter < title.persons.length - 1){
 													$(personSpan).append(", ")
 												}
 												personCounter++;
 
-												$(person_span_a).attr('href', "/gazelle/persons/" + person._id)
+												$(person_span_a).attr('href', "/persons/" + person._id)
 
 												$(person_span_a).click(function(e){
 													e.preventDefault();
-													route("/gazelle/persons/" + person._id)
+													route("/persons/" + person._id)
 												})
 											})
 
-
+											var date_span = document.createElement("span");
+											if(title.date){
+												$(date_span).text(" [" + title.date + "] ");
+											}
 
 											var docCount = 0;
-											data.doc.tags.forEach(function(tag){
+											title.tags.forEach(function(tag){
 												var tag_span_a = document.createElement("a")
-												$(tag_span_a).attr("href", "/titles?taglist="+tag)
+												$(tag_span_a).attr("href", "/torrents?taglist="+tag)
 												$(tag_span_a).click(function(e){
 													e.preventDefault();
-													route("/titles?taglist="+tag)
+													route("/torrents?taglist="+tag)
 												})
 												$(tag_span_a).text(tag)												
 												$(tagSpan).append(tag_span_a)
-												if(docCount !== data.doc.tags.length - 1){
+												if(docCount !== title.tags.length - 1){
 													$(tagSpan).append(", ")
 												}
 												docCount++;
@@ -1070,7 +1565,8 @@
 											$(div).append("<br>");
 											$(div).append(collageDiv);
 											$(collageDiv).append(titleSpan);
-											if(data.doc.persons.length > 0){
+											$(collageDiv).append(date_span);
+											if(title.persons.length > 0){
 												$(collageDiv).append(" by ")
 												$(collageDiv).append(personSpan);
 											}
@@ -1089,10 +1585,11 @@
 											count = false;
 										//}
 											
-									})
+									//})
 									
 									//end forEach
 								})
+								$(".gazelle_partial").css({'height' : 'auto'});
 								console.log("rendering img for class on gazelle partial")
 							}
 							
@@ -1111,16 +1608,82 @@
 						if(torrents){
 							torrents.forEach(function(title){
 								print_title_table(title);
-								print_torrent_table(title.torrents);
+								print_torrent_table(title._id, title.torrents);
 
 							})
 						}
 						if(doc.torrents){
-							print_torrent_table(doc.torrents);
+							print_torrent_table(doc._id, doc.torrents);
 
+						}
+
+						if(torrent_details){
+							console.log(doc.torrents)
+
+							var torrent = search(torrent_details, doc.torrents);
+							print_torrent_details(torrent)
+						}
+
+						if(collection === "titles"){
+							print_comment_system(doc.comments);
 						}
 						$(".gazelle_partial").show()
 					})
+				}
+
+
+
+				function print_comment_system(comments){
+					var div0 = $(".gazelle_partial #commentArea")
+					
+					$(div0).empty();
+					var trip = document.createElement("input");
+					$(trip).attr("type", "text");
+					$(trip).attr("placeholder", "tripcode")
+					var comment = document.createElement("textarea");
+					$(comment).attr("id", "commentBody")
+					var button = document.createElement("button");
+					$(button).text("Comment")
+					$(button).attr("id", "comment");
+
+					$(button).click(function(e){
+						e.preventDefault();
+						console.log("click")
+						var _id = window.location.pathname.split("/")[2];
+						console.log(_id)
+						$.post("/comment", {_id: _id, body : $("#commentBody").val(), trip: $("#commentTrip").val() }, function(data){
+
+						})
+					})
+					$(div0).append(trip);
+					$(div0).append("<br>")
+					$(div0).append(comment);
+					$(div0).append("<br>");
+					$(div0).append(button)	
+					if(comments){
+						comments.forEach(function(comment){
+							var div = document.createElement('div');
+							$(div).addClass("comment");
+							var div2 = document.createElement('div');
+							$(div2).addClass("postHeading");
+							$(div).append(div2);
+
+							var span = document.createElement("span");
+							$(span).text(comment.tripcode + " " + timeSince(Date.parse(comment.time)))
+							$(div2).append(span);
+							var div3 = document.createElement("div");
+							$(div3).addClass("commentBody");
+							$(div).append(div3)
+							var p = document.createElement("p");
+							$(p).text(comment.body);
+							$(div3).append(p);
+							$(div0).append(div);
+
+						})	
+					}				
+					
+					
+					
 				}
 
 				//todo edit loc of this startup function call
@@ -1128,28 +1691,33 @@
 
 				
 				var numPages;
-				function load_torrents(taglist){
+				function load_torrents(sort_by, order_by, taglist, terms, tags, types, search, publisher, date, format, person, bitrate, media, edition, number, pages, action){
 
 					//history.pushState('/titles', '', '/titles');
 					
 					$(".main_table").show();
 					if(taglist)	console.log("LOADING TAGS: " + taglist)
-					$.get("/browse?page=" + currentPage + "&taglist="+taglist, function(data){
+					console.log("LOAD TORRENTS---")
+					$.get("/browse?sort_by="+sort_by+"&order_by="+order_by+"&search=" + search + "&page=" + currentPage + "&taglist="+taglist +"&tags="+tags+"&terms="+terms+"&types="+types+"&publisher="+publisher+"&date="+date+"&format="+format+"&person="+person + "&bitrate="+bitrate+"&media="+media+"&edition="+edition+"&number="+number+"&pages="+pages + "&action=" +action, function(data){
+						console.log("ROOT--------------")
 						console.log(data);
 						if(data !== null){
 							//currentPage = data.currentPage;
-							numPages = data.numPages;							
+							numPages = data.numPages;	//TODO: deprecated?						
 							$(".main_table tbody").empty();							
 							data.titles.forEach(function(title){
 
 								print_title_table(title);
-								print_torrent_table(title.torrents);
+								print_torrent_table(title._id, title.torrents);
+								
 
 							})		
 						}
 						$(".titles_partial").show();
 					})
 				}
+
+
 
 				function load_classes(){
 				
@@ -1160,19 +1728,19 @@
 						$(".classes_partial").show();
 							$(".main_table tbody").empty();
 						data.classes.forEach(function(clas){
-							$(".main_table tbody").append("<tr id='class_row_"+clas._id + "'><td><a id='class_" + clas._id + "' href='/gazelle/classes/" + clas._id + "'>"+ clas.name +"</a></td><td class='taglist' id='taglist_" + clas._id + "'></td></tr>")
+							$(".main_table tbody").append("<tr id='class_row_"+clas._id + "'><td class='gaz_style'></td><td><a id='class_" + clas._id + "' href='/classes/" + clas._id + "'>"+ clas.name +"</a></td><td class='taglist' id='taglist_" + clas._id + "'></td><td>"+ clas.numTitles + "</td><td>"+ timeSince(Date.parse(clas.time)) + "</td></tr>")
 
 							var clasTagsCount = 0;
 							console.log($("#class_tags_" + clas._id));
 							clas.tags.forEach(function(tag){
 								clasTagsCount++;
 								console.log(tag);
-								$("#class_row_" + clas._id + ' .taglist').append("<a id='class_tag_"+ tag + "' href='/titles?taglist="+tag+"'>"+ tag +"</a>") 
+								$("#class_row_" + clas._id + ' .taglist').append("<a id='class_tag_"+ tag + "' href='/torrents?taglist="+tag+"'>"+ tag +"</a>") 
 								$("#class_row_" + clas._id + " #class_tag_"+ $.escapeSelector(tag)).click(function(e){
 									e.preventDefault();
 									console.log("routing to tag")
 									currentPage = 1;
-									route("/titles?taglist="+tag);
+									route("/torrents?taglist="+tag);
 								})
 								if(clasTagsCount !== clas.tags.length){
 									$("#class_row_" + clas._id + " .taglist").append(", ");
@@ -1181,7 +1749,7 @@
 
 							$("#class_" + clas._id).click(function(e){
 								e.preventDefault();
-								route("/gazelle/classes/" + clas._id);
+								route("/classes/" + clas._id);
 							})
 						})
 						$(".classes_partial").show();
@@ -1196,7 +1764,8 @@
 						//console.log(data.img);
 						//console.log(decodeURI(data.img));
 						$(".gazelle_partial img").attr("src", decodeHtml(data.img))
-						print_torrent_table(data.torrents);					
+						print_torrent_table(title._id, data.torrents);	
+
 					})
 				}
 
@@ -1204,11 +1773,17 @@
 
 					var date_span = title.date ? "<span><b> [" + title.date + "]</b></span>" : "";
 
-					$(".main_table tbody").append("<tr id='title_" + title._id + "' class='title_row'><td class='gaz_style'></td><td><a class='title_ref' href='/gazelle/titles/" + title._id + "'><b>"+unescapeHtml(title.name).toProperCase() +"</b></a>"+ date_span +"<span id='title_persons_by_" + title._id + "'></span> <span class='title_persons'></span> <br><span class='title_tags'></span></td><td></td><td></td><td></td></tr>")
+					var max_size_span = title.max_size ? prettyBytes(title.max_size) + " (Max)": "" ;
+
+					var time_span = title.time ? timeSince(Date.parse(title.time)) : "";
+
+					var snatched_span = title.snatched ? title.snatched : "";
+
+					$(".main_table tbody").append("<tr id='title_" + title._id + "' class='title_row'><td class='gaz_style'></td><td><a class='title_ref' href='/titles/" + title._id + "'><b>"+unescapeHtml(title.name).toProperCase() +"</b></a>"+ date_span +"<span id='title_persons_by_" + title._id + "'></span> <span class='title_persons'></span> <br><span class='title_tags'></span></td><td>" + time_span + "</td><td id='title_size'>" + max_size_span + "</td><td>" + snatched_span +"</td></tr>")
 								
 					$('#title_' + title._id + ' .title_ref').click(function(e){
 						e.preventDefault();
-						route("/gazelle/titles/" + title._id)
+						route("/titles/" + title._id)
 					})
 
 					if(title.persons.length > 0){
@@ -1233,10 +1808,10 @@
 						$("#title_" + title._id + " .title_tags").on('click', '#tag_' + $.escapeSelector(tag) + "_" + tagCount, function(e){
 							e.preventDefault()
 								//TODO: add params to routes
-								console.log("HERE");
-								console.log("/titles?taglist="+tag)
+								
+								console.log("/torrents?taglist="+tag)
 							currentPage = 1;
-							route("/titles?taglist=" + tag)
+							route("/torrents?taglist=" + tag)
 							
 						})
 					})
@@ -1256,18 +1831,18 @@
 						}
 
 						//so links can be copied
-						$("#title_" + title._id + " #person_" + person._id).attr("href", "/gazelle/persons/" + person._id)
+						$("#title_" + title._id + " #person_" + person._id).attr("href", "/persons/" + person._id)
 
 						$("#title_" + title._id + " #person_" + person._id).click(function(e){
 							e.preventDefault();
 							console.log("HERE");
-							route("/gazelle/persons/" + person._id);							
+							route("/persons/" + person._id);							
 						})
 						count++;
 					})
 				}
 
-				function print_torrent_table(torrents){
+				function print_torrent_table(titleID, torrents){
 					var arr = _.groupBy(torrents, "publisher")	
 
 					
@@ -1297,6 +1872,7 @@
 
 						$(".main_table tbody").append("<tr class='edition_row'><td class='gaz_style'></td><td><b>"+ publisher + "</b></td><td></td><td></td><td></td></tr>")
 
+						var infoHashes = []
 					    if (arr.hasOwnProperty(key)) {
 					        arr[key].forEach(function(tor){
 
@@ -1306,6 +1882,11 @@
 					        	}
 					        	else{
 					        		media = tor.media + " / ";
+					        	}
+
+					        	var release = ""
+					        	if(tor.release){
+					        		release = tor.release + " / "
 					        	}
 
 					        	var publisher = "Standard Edition"
@@ -1327,6 +1908,11 @@
 					        	if(tor.number){
 					        		number = "no. " + tor.number + " / " 
 					        	}
+
+					        	var codec = "";
+					        	if(tor.codec){
+					        		codec = tor.codec + " / "
+					        	}
 					        	
 					        	var format = "";
 					        	if(tor.format){
@@ -1346,19 +1932,41 @@
 					        	if(tor.snatched != null){
 					        		snatches = tor.snatched;
 					        	}
-					        	console.log(tor.snatched);
-					        	$(".main_table tbody").append("<tr class='torrent_row'><td class='gaz_style'></td><td id='data_"+tor.infoHash + "'><a href='#'>" + edition + number+ pages + media + format + bitrate + tor.tripcode + "</a><span class='dl'><a href='magnet:?xt=urn:btih:"+tor.infoHash+"&tr=wss%3A%2F%2Ftracker.btorrent.xyz&tr=wss%3A%2F%2Ftracker.openwebtorrent.com&tr=udp%3A%2F%2Ftracker.leechers-paradise.org%3A6969&tr=udp%3A%2F%2Ftracker.coppersurfer.tk%3A6969&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337&tr=udp%3A%2F%2Fexplodie.org%3A6969&tr=udp%3A%2F%2Ftracker.empire-js.us%3A1337'>[MG]</a><a href='#' class='download_torrent' id='dl_" + tor.infoHash + "'>[DL]</a></span></td><td class='tor_time'>" + time + "</td><td class='tor_size'>"+ prettyBytes(tor.size) +"</td><td id='snatches'>"+ snatches + "</td></tr>")
+
 					        	
 
-					        	$(".download_torrent").on('click', function(e){
+					        	console.log(tor.snatched);
+					        	$(".main_table tbody").append("<tr id='torrent_row_" + tor.infoHash + "' class='torrent_row'><td class='gaz_style'></td><td id='data_"+tor.infoHash + "'><a href='/titles/"+titleID + "?torrent_details=" + tor.infoHash + "' class='torrent_details' id='details_" + tor.infoHash + "' href='#'>" + release + edition + number+ pages + media + codec + format + bitrate + tor.tripcode + "</a><span class='dl'><a href='magnet:?xt=urn:btih:"+tor.infoHash+"&tr=wss%3A%2F%2Ftracker.btorrent.xyz&tr=wss%3A%2F%2Ftracker.openwebtorrent.com&tr=udp%3A%2F%2Ftracker.leechers-paradise.org%3A6969&tr=udp%3A%2F%2Ftracker.coppersurfer.tk%3A6969&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337&tr=udp%3A%2F%2Fexplodie.org%3A6969&tr=udp%3A%2F%2Ftracker.empire-js.us%3A1337'>[MG]</a><a href='#' class='download_torrent' id='dl_" + tor.infoHash + "'>[DL]</a></span></td><td class='tor_time'>" + time + "</td><td class='tor_size'>"+ prettyBytes(tor.size) +"</td><td id='snatches'>"+ snatches + "</td></tr>")
+					        	
+					        	/*$(".torrent_details").on('click', function(e){					        		
+					        			e.preventDefault();
+					        			console.log("here");
+					        	})*/
+
+
+					        	$(".main_table #dl_"+tor.infoHash).on('click', function(e){
 									e.preventDefault();
-									console.log($(this).prev().attr('href'));
-									downloadTorrent($(this).prev().attr('href'));								      
+					        		console.log($(this).prev().attr('href'));
+									downloadTorrent($(this).prev().attr('href'));					        	
+																      
 								})
+								$("#details_"+tor.infoHash).on('click', function(e){
+					        		e.preventDefault();
+					        		route("/titles/" + titleID + "?torrent_details=" + tor.infoHash);  
+
+					        	})
 
 					        })
+
+					        	
+					        	
+					       
 					    }
 					}
+				}
+
+				function print_torrent_details(torrent){
+					$("<tr class='torrent_details_row'><td class='gaz_style'></td><td colspan='4'><div class='details_box'><p><span>Uploaded by " + torrent.trip + " </span><span>" + timeSince(Date.parse(torrent.time)) + "</span></p></div><div class='details_box'><p><span>Media: " + torrent.media + "</span><br><span>Codec: " + torrent.codec + "</span><br><span>Format: " + torrent.format + "</span><br><span>" + torrent.bitrate +"</span></p></div></td></tr>").insertAfter($("#torrent_row_" + torrent.infoHash))
 				}
 
 				function downloadTorrent(href){
@@ -1414,7 +2022,66 @@
 
 				function load_index(){
 					//history.pushState('/index', '', '/index')
-					$(".index_partial").show();
+					$.get("/load_index", function(data){
+						console.log(data);
+						$("#indexTiles").empty()
+						
+
+						data.result.forEach(function(title){
+
+							console.log(title.name);
+							var div = document.createElement('div');
+							$(div).addClass('indexTile')
+							var a = document.createElement('a');
+
+							
+
+							$(a).click(function(e){
+								e.preventDefault();
+								route("/titles/"+ title._id)
+							})
+							$(a).attr("href", "/titles/" + title._id)
+							var imgURL = "https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/PDF_file_icon.svg/1200px-PDF_file_icon.svg.png"
+							if(title.img){
+								imgURL = title.img;
+							}
+
+							var img = document.createElement("img");
+							$(a).append(img)
+							$(img).attr("src", imgURL);
+							$(div).append(a);
+							$(div).append("<br>")
+
+							var titleS = document.createElement("span");
+							var titleA = document.createElement('a');
+							$(titleS).append(titleA);
+							$(titleA).text(title.name.toProperCase());
+							$(titleA).attr('href', "/titles/" + title._id)
+							$(titleA).click(function(e){
+								e.preventDefault(load_index);
+								route("/titles/" + title._id);
+							})
+
+							var time = document.createElement("span");
+							$(time).text(timeSince(Date.parse(title.time)));
+
+							var tripcode = document.createElement("span");
+							var tripcodeA = document.createElement("a");
+							//find most recent torrent
+							$(tripcodeA).text("Anonymous");
+							if(title.recentTrip){
+								$(tripcodeA).text(title.recentTrip);
+							}
+							$(tripcode).append(tripcodeA);
+							$(div).append(titleS);
+							$(div).append("<br>")
+							$(div).append(time);
+							$(div).append("<br>")
+							$(div).append(tripcode)
+							$("#indexTiles").append(div);
+						})
+						$(".index_partial").show();
+					})
 				}		
 
 				function load_upload(){
@@ -1458,7 +2125,9 @@
 					e.preventDefault();
 					$.post("/add_person", {'name' : $("#doc_person").val()}, function(data){
 						$(that).next().after("<span class='added_person'><br>" + data.name + "</span><br>")
-						persons.push({"_id" : data._id, "name" :data.name})
+						var importance = $("#docPersonImportance").val();
+						var role = $("#docPersonRole").val();
+						appendPerson(data._id, data.name, importance, role)
 					})
 				})
 
@@ -1467,7 +2136,9 @@
 					e.preventDefault();
 					$.post("/create_person", {'name' : $("#doc_person").val()}, function(data){
 						$(that).next().after("<span class='added_person'><br>" + data.name + "</span>")
-						persons.push({"_id" : data._id, "name" :data.name})
+						var importance = $("#docPersonImportance").val();
+						var role = $("#docPersonRole").val();
+						appendPerson(data._id, data.name, importance, role)
 					})
 				})
 
@@ -1476,7 +2147,9 @@
 					e.preventDefault();
 					$.post("/add_person", {'name' : $("#upload_person").val() }, function(data){
 						$(that).next().after("<span class='added_person'><br>"+data.name+"</span>")
-						persons.push({"_id" : data._id, "name" :data.name})
+						var importance = $("#personImportance").val();
+						var role = $("#personRole").val();
+						appendPerson(data._id, data.name, importance, role)
 					})			
 
 				})
@@ -1486,17 +2159,53 @@
 					e.preventDefault();
 					$.post("/create_person", {'name' : $("#upload_person").val() }, function(data){
 						$(that).after("<span class='added_person'><br>"+data.name+"</span>")
-						persons.push({"_id" : data._id, "name" :data.name})
+						var importance = $("#personImportance").val();
+						var role = $("#personRole").val();
+						appendPerson(data._id, data.name, importance, role)
 					})
 				})
+
+				function appendPerson(id, name, importance, role){
+					persons.push({"_id" : id, "name" : name, "importance" : importance, "role" : role})
+				}
 						
 
 				function paginate(){
 					var collection = window.location.pathname.split("/")[1];
+					if(collection === "class"){
+						collection = "classes";
+					}
+					const urlParams = new URLSearchParams(window.location.search);
+					const view = urlParams.get('view');
+					const doc = urlParams.get('doc');
+					const taglist = urlParams.get('taglist');
+					const tags= urlParams.get('tags');
+					const terms = urlParams.get('terms');
+					const types = urlParams.get('types');
+					const publisher = urlParams.get('publisher');
+					const date = urlParams.get('date');
+					const format = urlParams.get('format');
+					const person = urlParams.get('person')
+					const edition = urlParams.get('edition')
+					const number = urlParams.get('number');
+					const pages = urlParams.get('pages');
+					const media = urlParams.get("media");
+					const bitrate = urlParams.get("bitrate")
 
-					$.get("/pagination", {collection : collection}, function(data){
+					var action = urlParams.get('action');
+					//search=true etc
+					const search = urlParams.get("search")
+
+					//comment system pagination
+					/*var titleID;
+					if(collection === "titles"){
+						titleID = window.location.pathname.split("/")[2];
+					}*/
+					//todo: right page count with taglist search query param, TODO more searchterms 
+					$.get("/pagination", {media: media, bitrate: bitrate, edition:edition, number:number, pages: pages, action: action, publisher: publisher, date : date, format: format, person : person, collection : collection, view: view, terms: terms, tags: tags, types: types, search: search, doc :doc, taglist : taglist}, function(data){
 						if(data !== null){
-
+							$(".pagination").append("TEST");
+							console.log(data.numPages);
 							$(".pagination").empty();
 							
 					
@@ -1544,9 +2253,9 @@
 							}
 
 							var counter = 0;
-							console.log(currentPage);
+							console.log(index, index2)
 							for(var i = index; i <= index2; i++){
-								console.log("COUNTER " + i);
+								
 								$(".pagination #pager_"+counter).text(" ["+ i + "] ");
 								$(".pagination #pager_"+ counter).addClass("page_" +i);
 								counter++;
@@ -1650,24 +2359,28 @@
 						$("#realtime_" + collection ).empty();
 						if(data.documents.length > 0){
 							$("#realtime_" + collection).show();
+							var threadIDs = [];
 							data.documents.forEach(function(doc){
-								if(collection === "forums"){
-									$("#realtime_" + collection).append("<span><a href='/forums?view=thread&doc=" + doc.threadID + "' class='realtime_a' id='realtime_" + doc.threadID + "'>" + doc.threadTitle + "</a></span><br>")
-									$("#realtime_" + doc.threadID).click(function(e){
+								if(collection === "forums"){									
+									if(!threadIDs.includes(doc.threadID)){
+										threadIDs.push(doc.threadID);
+										$("#realtime_" + collection).append("<span><a href='/forums?view=thread&doc=" + doc.threadID + "' class='realtime_a' id='realtime_" + doc.threadID + "'>" + doc.threadTitle.toProperCase() + "</a></span><br>")
+										$("#realtime_" + doc.threadID).click(function(e){
 										e.preventDefault();
 										var id = getSuffix($(this).attr('id'));
 										route("/forums?view=thread&doc=" + id)
 										
 									})
+									}									
 								}
 								else{
-									$("#realtime_" + collection).append("<span><a href='/gazelle'" + collection + "/" + doc._id + "' class='realtime_a' id='realtime_" + doc._id + "'>" + doc.name + "</a></span><br>")
+									$("#realtime_" + collection).append("<span><a href='/" + collection + "/" + doc._id + "' class='realtime_a' id='realtime_" + doc._id + "'>" + doc.name.toProperCase() + "</a></span><br>")
 									$("#realtime_" + doc._id).click(function(e){
 										e.preventDefault();
 										console.log("here")
 										var id = getSuffix($(this).attr('id'));
 										console.log(id);										
-										route("/gazelle/" + collection + "/" + id);
+										route("/" + collection + "/" + id);
 										
 									})
 								}
@@ -1742,6 +2455,18 @@
 				    return this.replace(/\w\S*/g, function(txt){return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();});
 				};
 
+				function search(nameKey, myArray){
+					console.log(myArray);
+					console.log(nameKey);
+				    for (var i=0; i < myArray.length; i++) {
+				    	console.log(myArray[i].infoHash)
+				        if (myArray[i].infoHash === nameKey) {
+
+				            return myArray[i];
+				        }
+				    }
+				}
+
 				function prettyBytes(num) {
 			        var exponent, unit, neg = num < 0, units = ['B', 'kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
 			        if (neg) num = -num
@@ -1788,11 +2513,15 @@
 	      }
 	      #hero {
 	          background-color: #2a3749; /* #179b9f;#ecdb82;*/
-	          box-shadow:2px 3px 1px #c8dbd5;
+	          background-color: #2a3749;
+	          border:1px solid #5c3046;
+	          box-sizing: border-box;
 	          width:100%;
 	      }
 	      #status {
-	          color: coral; /*#ecdb82;*/
+	          color: #30a247;/*coral;*/ /*#ecdb82;*/
+	          color: #ac1db8;
+	          color: white;
 	          font-size: 17px;
 	          padding: 5px;
 	      }
@@ -1802,10 +2531,34 @@
 	          font-family:"Oswald",sans-serif;
 	      }
 
+	      .details_box{
+	      	border-style: dotted;
+	      }
+
+	      body{
+				background-color:#e6e6ff;
+				background-color:#32a852;
+				background-color:#419169;
+				background-color: #84c76f;
+				background-color: #94e0a3;
+				background-color:#80bf91;
+				background-color: #ebe5be;
+				width:100%;
+
+			}
+
+	      #text{
+	      	display: none;
+	      }
 	      .post{
-	      	padding:55px;
+	      	margin:55px;
+	    /*  	border:3px solid #9fccaa;*/
 	      }
 	    
+	    .post p{
+	    	background-color:#e6e6ff;
+	    	font-size:12px;
+	    }
 
 	      .postHeading{
 	      	width:100%;
@@ -1814,9 +2567,22 @@
 	      	border-radius:7px;
 	      }
 
-	      a:hover{
-	      	color:#FF7F50;
+	
+
+	      .heading{
+	      	font-family:Arial;
 	      }
+
+	      .indexPost{
+	      	margin-top: 33px;
+	      	font-size: 12px;
+	      }
+
+	      .indexPost p{
+	      	background-color: white;
+	      }
+
+	     
 			/* http://meyerweb.com/eric/tools/css/reset/ 
    v2.0 | 20110126
    License: none (public domain)
@@ -1848,6 +2614,9 @@
 				display: block;
 			}
 			body {
+				margin:0;
+				padding:0;
+
 				line-height: 1;
 			}
 			ol, ul {
@@ -1868,28 +2637,59 @@
 			}
 
 			h1{
-				padding:24px;
+				padding:8px;
+				width:150px;
+				height: 75px;
+				float: left;
 			}
 
-			h2{
-				padding:18px;
+			.panel{
+				float: left;
+				margin-left: 88px;
+			}
+
+			h2 a{
+				padding:0px;
+				color: white;
+			}
+
+			.quote{
+				color: #30a247;
+			}
+
+			#commentArea{
+				width: 88%;
+				margin:  0 auto;
+			}
+
+			.comment{
+				background-color: white;
+				margin: 33px;
+				margin-left: 0px;
+				border: 1px solid #CDECDC;
+				font-size: 12px;
 			}
 
 			p{
-				padding:33px;
+				padding:8px;
 			}
 
-			body{
-				background-color:#e6e6ff;
-				width:100%;
+			.partial{
+				padding: 8px;
+			}
+			
+			.details_box{
+				border: 1px dotted black;
+				border-style: dotted;
+				padding: 6px;
 			}
 
 			h1 a{
 				font-size:26px;
-				color:coral; /*#2a3749;*/
+				color:white; /*#2a3749;*/
 				font-family:Georgia;
 
-				text-shadow:2px 3px #2a3749;
+				text-shadow:2px 3px coral;
 				background-image: linear-gradient(to left, violet, indigo, blue, green, yellow, orange, red);
 				
 			}
@@ -1899,20 +2699,72 @@
 			}
 
 			.heading{
-				padding:55px;
+				font-family:Georgia;
+				padding:125px;
+				padding-left:0px;
 			}
 
-			.heading li{
+			#spanRight{
+				float:right;
+			}
+
+			.heading li, .panel li{
 				float:left;
-				padding:11px;
+				padding:9px;
 			}
 
+			.panel{
+				font-size:13px;
+				padding: 9px;
+				padding-left: 0px;
+
+			}
+
+			
+			.post{
+				white-space: pre-wrap;
+			}
 			.add_class{
 				float:right;
 			}
 
 			.upload input{
 				
+			}
+
+			.basicSearch{
+				width:442px;
+				height:300px;
+				margin:0 auto;
+				border:1px solid #5c3046; /*692aa8*/
+				background-color:#c8dbd5;
+				background-color: #66ff89;
+				background-color: #00E32D;
+				background-color: #2a3749;
+				padding:32px;
+				margin-bottom:45px;
+				margin-top: 41px;
+			}
+
+			.basicSearch li{
+				float:left;
+				font-family:Georgia;
+				color: white;
+			}
+
+			.basicSearch a{
+				color: coral;
+			}
+
+			.basicSearch ul{
+				float:none;
+				height:55px;
+				clear:both;
+				width:100%;
+			}
+
+			.basicSearch button{
+				clear:both;
 			}
 
 			.hidden{
@@ -1928,6 +2780,12 @@
 				margin:8px;
 			}
 
+			.indexTile{
+				margin: 8px;
+				padding: 16px;
+				text-align: center;
+			}
+
 			.gaz_img{
 				padding:32px;
 			}
@@ -1940,19 +2798,35 @@
 				width:178px;
 				height:200px;
 				display:none;
-				background-color:#FFBB42;
-				position:relative;
+				background-color:white;
+				position:absolute;
+				padding: 8px;
 				z-index:2;
-				top:-7;
-				left:7;
+				margin-top: -7px;
+				margin-left: 5px;
+				
+			}
+
+			.section_td{
+				width:200px;
+			}
+
+			.last_post_td{
+				width:300px;
 			}
 
 			.gaz_style{
 				border-right:1px solid gold;
+				width:55px;
+			}
+
+			.main_table{
+				background-color:#e6e6ff;
+
 			}
 
 			.realtime_search a{
-				color:#FF7F50;
+				color:#00E32D;;
 				padding:2px;
 				font-size:12px;
 			}
@@ -1971,7 +2845,24 @@
 			h2{
 				font-size:18px;
 				padding:14px;
+				padding-left: 0px;
+				font-family:Georgia;
+				
 			}
+
+			h3{
+				font-family:Georgia;
+			}
+
+			.heading a, .panel a, h2 a{
+				color: #4b375e;
+				color: #5c3046;
+			}
+
+			.basicSearch a {
+				color: #CDCDCD;
+			}
+
 
 			td{
 				padding:7px;
@@ -1993,9 +2884,18 @@
 			}
 
 			.main_table{
-				width:100%;
+				width:85%;
+				margin:0 auto;
 				box-shadow: -5px 0px 5px -3px #616161;
 				padding-left:15px;
+			}
+
+			.forums_partial .main_table{
+				table-layout:fixed;
+			}
+
+			#replies{
+				width:77px;
 			}
 
 			.main_table tr{
@@ -2027,16 +2927,42 @@
 			.heading{
 
 			}
+
+			.top10_partial{
+				width: 85%;
+				margin: 0 auto;
+				background-color: white;
+			}
 			
 			.collage{
 				padding:66px;
 				font-size:12px;
+				
+
 			}
 
 			.collage img{
 				padding:12px;
+				padding-bottom:0px;
 				width:176px;
 				height:246px;
+			}
+
+			.indexTile{
+				float: left;
+				width: 176px;
+			}
+
+			.indexTile img{
+				padding: 12px;
+				padding-bottom: 0px;
+				width: 176px;
+				height: 246px;
+			}
+
+			#indexTiles{
+				height: 400px;
+				background-color: white;
 			}
 
 			.tag{
@@ -2048,11 +2974,14 @@
 				width:176px;
 				float:left;
 				margin:12px;
+				margin-top:0px;
 			}
 
 			.collageDiv{				
 				background-color:#c8dbd5;
+				background-image: linear-gradient(to bottom, #FFF 0%, #c8dbd5 100%);
 				border-radius:4px;
+				border-radius:0px 0px 6px 6px;
 			}
 
 			.collageSpan{
@@ -2068,7 +2997,7 @@
 			}
 
 			.top10_partial .collage{
-				height: 720px;
+				height: 650px;
 			}
 
 			.br{
@@ -2077,9 +3006,23 @@
 				width:1024px;
 			}
 
-			#wrapper{
-				
+			#commentBody{
+				width: 40%;
+				height: 500px;
 			}
+			
+
+			td{
+				border:1px solid #CDCDCD;
+			}
+
+			body{
+	      		font-family:Arial, sans-serif;
+	     	}
+
+	     	a:hover{
+	      		color:gold;
+	      	}
 
 		</style>
 	</body>
