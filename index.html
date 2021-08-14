@@ -717,7 +717,7 @@
 					if(!view){
 						//put your forum section groups here, for example Bugs forum section is grouped under SolomonsHouse
 						var h31 = document.createElement('h3');
-						$(h31).text("FrogHouse")
+						$(h31).text("SolomonsHouse")
 						var h32 = document.createElement('h3');
 						$(h32).text("General Discussion")				
 						
@@ -730,13 +730,15 @@
 						$(table2).attr('id', "table_2")
 
 						$(".forums_partial").append(h31)
+						$(".forums_partial").append("<br>")
 						$(".forums_partial").append(table1);
 						$(".forums_partial").append("<br>")
 						$(".forums_partial").append(h32)
+						$(".forums_partial").append("<br>")
 						$(".forums_partial").append(table2);
 						$(".main_table").append("<tr><th class='gaz_style'></th><th class='section_td'>Section</th><th class='last_post_td'>Last post</th>")
 						
-						//table1: FrogHouse related forum sections
+						//table1: SolomonsHouse related forum sections
 						//table2: General Discussion
 						$.get("/forum", function(data){
 							console.log(data);
@@ -2831,10 +2833,18 @@
 				font-size:12px;
 			}
 
+			.index_partial{
+				min-width: 1200px;
+			}
+
 			.index_partial span{
 				width:100%;
 				float:right;
 				text-align:left;
+			}
+
+			.indexPost{
+				width: 100%;
 			}
 
 			object{
@@ -2951,6 +2961,7 @@
 			.indexTile{
 				float: left;
 				width: 176px;
+				display:  inline;
 			}
 
 			.indexTile img{
@@ -2962,6 +2973,7 @@
 
 			#indexTiles{
 				height: 400px;
+				width: 100%;
 				background-color: white;
 			}
 
